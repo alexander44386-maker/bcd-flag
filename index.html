@@ -243,11 +243,11 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 ================================================================ */
 const CONTINENTS = [
   {id:"europe",name:"Europe",color:"#7C3AED",colorDark:"#5B21B6",days:[1,2,3,4,5,6,7,8]},
-  {id:"asia",name:"Asia",color:"#FF9600",colorDark:"#E07F00",days:[9,10,11,12,13,14,15,16]},
-  {id:"africa",name:"Africa",color:"#FFC800",colorDark:"#E6AC00",days:[17,18,19,20,21,22,23]},
-  {id:"americas",name:"Americas",color:"#1CB0F6",colorDark:"#0A91D6",days:[24,25,26,27,28,29]},
-  {id:"oceania",name:"Oceania & Pacific",color:"#CE82FF",colorDark:"#A557E0",days:[30,31,32,33]},
-  {id:"micro",name:"Micronations & More",color:"#EC4899",colorDark:"#BE185D",days:[34,35,36]},
+  {id:"asia",name:"Asia",color:"#FF9600",colorDark:"#E07F00",days:[9,10,11,12,13,14,15]},
+  {id:"africa",name:"Africa",color:"#FFC800",colorDark:"#E6AC00",days:[16,17,18,19,20,21]},
+  {id:"northamerica",name:"North America",color:"#1CB0F6",colorDark:"#0A91D6",days:[22,23,24,27]},
+  {id:"southamerica",name:"South America",color:"#EC4899",colorDark:"#BE185D",days:[25,26]},
+  {id:"oceania",name:"Oceania",color:"#CE82FF",colorDark:"#A557E0",days:[28,29,30]},
 ];
 
 const DAYS = [
@@ -358,100 +358,86 @@ const DAYS = [
     {name:"Kuwait",flag:"🇰🇼",capital:"Kuwait City",fact:"Black, green, white, and red are the Pan-Arab colors adopted after independence.",attraction:"🕌 Kuwait Towers"},
     {name:"Oman",flag:"🇴🇲",capital:"Muscat",fact:"The white khanjar (dagger) and belt on red have symbolized Oman for centuries.",attraction:"🏔️ Wahiba Sands Desert"},
   ]},
-  {day:16,continent:"asia",title:"East & South Asia Extras",countries:[
-    {name:"Taiwan",flag:"🇹🇼",capital:"Taipei",fact:"The blue sky, white sun, and red earth represent the Three Principles of the People.",attraction:"🏙️ Taipei 101"},
-    {name:"Hong Kong",flag:"🇭🇰",capital:"Hong Kong",fact:"A white bauhinia flower on red honors the city's iconic flower.",attraction:"🚡 The Peak Victoria"},
-    {name:"Macau",flag:"🇲🇴",capital:"Macau",fact:"A white lotus blossom over a bridge represents Macau's peaceful handover.",attraction:"🎰 Ruins of St. Paul's"},
-    {name:"Maldives",flag:"🇲🇻",capital:"Malé",fact:"A white crescent on red and green represents Islam and peace.",attraction:"🏝️ Ari Atoll Overwater Bungalows"},
-    {name:"Bhutan",flag:"🇧🇹",capital:"Thimphu",fact:"A dragon clutching jewels represents the 'Land of the Thunder Dragon' itself.",attraction:"🏯 Tiger's Nest Monastery"},
-  ]},
   // ── AFRICA ──
-  {day:17,continent:"africa",title:"North Africa",countries:[
+  {day:16,continent:"africa",title:"North Africa",countries:[
     {name:"Egypt",flag:"🇪🇬",capital:"Cairo",fact:"The golden eagle of Quraysh in its center is a symbol shared with several Arab nations.",attraction:"🔺 Pyramids of Giza"},
     {name:"Libya",flag:"🇱🇾",capital:"Tripoli",fact:"Brought back in 2011, this flag was the original kingdom flag dating to 1951.",attraction:"🏛️ Leptis Magna Roman City"},
     {name:"Algeria",flag:"🇩🇿",capital:"Algiers",fact:"The red star and crescent are classic symbols of Islam set against green and white.",attraction:"🕌 Djémila Roman Ruins"},
     {name:"Morocco",flag:"🇲🇦",capital:"Rabat",fact:"The green five-pointed star (Seal of Solomon) has marked the flag since 1915.",attraction:"🏙️ Marrakech Medina"},
     {name:"Tunisia",flag:"🇹🇳",capital:"Tunis",fact:"Its red field and crescent-and-star design date back to the Ottoman era in the 1830s.",attraction:"🏛️ Carthage Ancient City"},
   ]},
-  {day:18,continent:"africa",title:"West Africa I",countries:[
+  {day:17,continent:"africa",title:"West Africa I",countries:[
     {name:"Nigeria",flag:"🇳🇬",capital:"Abuja",fact:"Green represents the nation's forests and agriculture; white stands for peace and unity.",attraction:"🏺 Osun-Osogbo Sacred Grove"},
     {name:"Ghana",flag:"🇬🇭",capital:"Accra",fact:"The black star was the first to appear on an independent sub-Saharan African flag, in 1957.",attraction:"🏰 Cape Coast Castle"},
     {name:"Senegal",flag:"🇸🇳",capital:"Dakar",fact:"A green star sits at the center of pan-African red, gold, and green.",attraction:"🌊 Pink Lake Retba"},
     {name:"Mali",flag:"🇲🇱",capital:"Bamako",fact:"Its green, gold, and black stripes form the 'Pan-African colors'.",attraction:"🕌 Great Mosque of Djenné"},
     {name:"Ivory Coast",flag:"🇨🇮",capital:"Yamoussoukro",fact:"Nearly a mirror of Ireland's flag, with orange and green swapped sides.",attraction:"⛪ Basilica of Our Lady of Peace"},
   ]},
-  {day:19,continent:"africa",title:"West Africa II",countries:[
+  {day:18,continent:"africa",title:"West Africa II",countries:[
     {name:"Guinea",flag:"🇬🇳",capital:"Conakry",fact:"Red, yellow, and green were chosen to echo Ghana's pioneering pan-African flag.",attraction:"🌊 Îles de Los Archipelago"},
     {name:"Sierra Leone",flag:"🇸🇱",capital:"Freetown",fact:"Green stands for the land, white for unity, and blue for the natural harbor in Freetown.",attraction:"🏖️ Tokeh Beach"},
     {name:"Liberia",flag:"🇱🇷",capital:"Monrovia",fact:"Modeled on the US flag by freed American slaves who founded the country in 1847.",attraction:"🌿 Sapo National Park"},
     {name:"Togo",flag:"🇹🇬",capital:"Lomé",fact:"A white star on a red square anchors stripes of green and yellow.",attraction:"🏖️ Lomé Grand Market"},
     {name:"Benin",flag:"🇧🇯",capital:"Porto-Novo",fact:"Green, yellow, and red were adopted in 1959 to replace French colonial colors.",attraction:"🏛️ Royal Palaces of Abomey"},
   ]},
-  {day:20,continent:"africa",title:"East Africa",countries:[
+  {day:19,continent:"africa",title:"East Africa",countries:[
     {name:"Kenya",flag:"🇰🇪",capital:"Nairobi",fact:"A Maasai shield and spears sit at the center, symbolizing the defense of freedom.",attraction:"🦁 Maasai Mara Safari"},
     {name:"Ethiopia",flag:"🇪🇹",capital:"Addis Ababa",fact:"Never colonized, Ethiopia's green-yellow-red design inspired the 'pan-African colors' movement.",attraction:"⛪ Rock-Hewn Churches of Lalibela"},
     {name:"Tanzania",flag:"🇹🇿",capital:"Dodoma",fact:"A diagonal black stripe represents the country's people, framed by green land and blue sea.",attraction:"🦒 Serengeti National Park"},
     {name:"Somalia",flag:"🇸🇴",capital:"Mogadishu",fact:"Its single white star represents the five regions where Somali people traditionally live.",attraction:"🏖️ Lido Beach Mogadishu"},
     {name:"Rwanda",flag:"🇷🇼",capital:"Kigali",fact:"Redesigned in 2001 to remove the color red, aiming to leave behind associations with past conflict.",attraction:"🦍 Volcanoes National Park"},
   ]},
-  {day:21,continent:"africa",title:"Southern Africa",countries:[
+  {day:20,continent:"africa",title:"Southern Africa",countries:[
     {name:"South Africa",flag:"🇿🇦",capital:"Pretoria",fact:"Adopted in 1994, it's one of the few flags with six colors and no coat of arms.",attraction:"🏔️ Table Mountain Cape Town"},
     {name:"Zimbabwe",flag:"🇿🇼",capital:"Harare",fact:"A soapstone bird, the Zimbabwe Bird, has symbolized the nation since ancient Great Zimbabwe.",attraction:"🌊 Victoria Falls"},
     {name:"Zambia",flag:"🇿🇲",capital:"Lusaka",fact:"An eagle in flight represents freedom, placed deliberately off-center on the flag.",attraction:"🌊 Livingstone Falls"},
     {name:"Botswana",flag:"🇧🇼",capital:"Gaborone",fact:"Light blue represents water and rain — vital and scarce in this part of the Kalahari.",attraction:"🐘 Okavango Delta"},
     {name:"Namibia",flag:"🇳🇦",capital:"Windhoek",fact:"A golden sun represents life and energy, set against the red of its people.",attraction:"🏜️ Sossusvlei Dunes"},
   ]},
-  {day:22,continent:"africa",title:"Central Africa",countries:[
+  {day:21,continent:"africa",title:"Central Africa",countries:[
     {name:"DR Congo",flag:"🇨🇩",capital:"Kinshasa",fact:"A single yellow star sits in the corner, representing hope on a diagonal red stripe.",attraction:"🌿 Congo Rainforest"},
     {name:"Cameroon",flag:"🇨🇲",capital:"Yaoundé",fact:"A central yellow star earned it the nickname 'the star flag.'",attraction:"🏔️ Mount Cameroon"},
     {name:"Angola",flag:"🇦🇴",capital:"Luanda",fact:"A machete and gear evoke the Soviet hammer and sickle, reflecting its socialist independence movement.",attraction:"🏖️ Kalandula Falls"},
     {name:"Madagascar",flag:"🇲🇬",capital:"Antananarivo",fact:"White and red link to Indonesia, the ancestral homeland of the Malagasy people.",attraction:"🌲 Avenue of the Baobabs"},
     {name:"Mozambique",flag:"🇲🇿",capital:"Maputo",fact:"The only national flag to feature a modern firearm — an AK-47 — on its emblem.",attraction:"🏖️ Quirimbas Archipelago"},
   ]},
-  {day:23,continent:"africa",title:"Island Africa & Extras",countries:[
-    {name:"Seychelles",flag:"🇸🇨",capital:"Victoria",fact:"Five diagonal bands radiate from one corner, representing a dynamic, forward-looking nation.",attraction:"🏝️ Anse Source d'Argent Beach"},
-    {name:"Mauritius",flag:"🇲🇺",capital:"Port Louis",fact:"Four equal stripes make it the only flag with exactly that color combination: red, blue, yellow, green.",attraction:"🌊 Seven Colored Earths"},
-    {name:"Cape Verde",flag:"🇨🇻",capital:"Praia",fact:"Ten stars represent the ten main islands of the archipelago.",attraction:"🌋 Santo Antão Volcanos"},
-    {name:"Eswatini",flag:"🇸🇿",capital:"Mbabane",fact:"A warrior's shield and spears sit atop blue, yellow, and red — symbolizing peace after past conflict.",attraction:"🦛 Hlane Royal National Park"},
-    {name:"Lesotho",flag:"🇱🇸",capital:"Maseru",fact:"A Basotho hat (mokorotlo) sits proudly at the center — one of the most unique designs in the world.",attraction:"🏔️ Maletsunyane Falls"},
-  ]},
-  // ── AMERICAS ──
-  {day:24,continent:"americas",title:"North America",countries:[
+  // ── NORTH AMERICA ──
+  {day:22,continent:"northamerica",title:"North America",countries:[
     {name:"United States",flag:"🇺🇸",capital:"Washington D.C.",fact:"Fifty stars represent the states, while 13 stripes honor the original colonies.",attraction:"🗽 Statue of Liberty"},
     {name:"Canada",flag:"🇨🇦",capital:"Ottawa",fact:"The maple leaf design was chosen in 1965 after a long national design competition.",attraction:"🌊 Niagara Falls"},
     {name:"Mexico",flag:"🇲🇽",capital:"Mexico City",fact:"The eagle eating a serpent depicts an Aztec legend marking the founding site of Tenochtitlan.",attraction:"🏯 Chichén Itzá"},
     {name:"Cuba",flag:"🇨🇺",capital:"Havana",fact:"Its single star and stripes design directly inspired Puerto Rico's flag.",attraction:"🏙️ Old Havana Colonial City"},
     {name:"Jamaica",flag:"🇯🇲",capital:"Kingston",fact:"One of only two national flags with no red, white, or blue (the other is Mauritania).",attraction:"🌊 Dunn's River Falls"},
   ]},
-  {day:25,continent:"americas",title:"Central America",countries:[
+  {day:23,continent:"northamerica",title:"Central America",countries:[
     {name:"Guatemala",flag:"🇬🇹",capital:"Guatemala City",fact:"A resplendent quetzal bird, a symbol of liberty, sits at the center of its coat of arms.",attraction:"🌋 Tikal Mayan City"},
     {name:"Honduras",flag:"🇭🇳",capital:"Tegucigalpa",fact:"Five blue stars represent the five nations once united in the Federal Republic of Central America.",attraction:"🏛️ Copán Ruins"},
     {name:"Belize",flag:"🇧🇿",capital:"Belmopan",fact:"The most detailed coat of arms of any flag, depicting tools and figures of the logging trade.",attraction:"🐠 Great Blue Hole"},
     {name:"Costa Rica",flag:"🇨🇷",capital:"San José",fact:"A thick blue-white-red-white-blue band was adopted in 1848, inspired by the French Revolution.",attraction:"🌋 Arenal Volcano"},
     {name:"Panama",flag:"🇵🇦",capital:"Panama City",fact:"Blue and red stars represent the country's two main political parties, joined in compromise.",attraction:"⛵ Panama Canal"},
   ]},
-  {day:26,continent:"americas",title:"Caribbean",countries:[
+  {day:24,continent:"northamerica",title:"Caribbean",countries:[
     {name:"Haiti",flag:"🇭🇹",capital:"Port-au-Prince",fact:"Made by tearing the white from the French tricolor, symbolizing the end of colonial rule.",attraction:"🏰 Citadelle Laferrière"},
     {name:"Dominican Republic",flag:"🇩🇴",capital:"Santo Domingo",fact:"The only national flag with a Bible depicted on its coat of arms.",attraction:"🏖️ Punta Cana Beaches"},
     {name:"Trinidad and Tobago",flag:"🇹🇹",capital:"Port of Spain",fact:"A black diagonal stripe represents unity, dedication, and the wealth of the people.",attraction:"🦜 Caroni Swamp Scarlet Ibis"},
     {name:"Bahamas",flag:"🇧🇸",capital:"Nassau",fact:"A black triangle represents the determination of Bahamians to develop their resources.",attraction:"🐠 Exuma Cays"},
     {name:"Barbados",flag:"🇧🇧",capital:"Bridgetown",fact:"A broken trident represents independence — a break from the old colonial coat of arms.",attraction:"🏖️ Harrison's Cave"},
   ]},
-  {day:27,continent:"americas",title:"South America I",countries:[
+  {day:25,continent:"southamerica",title:"South America I",countries:[
     {name:"Brazil",flag:"🇧🇷",capital:"Brasília",fact:"Its 27 stars map the actual night sky over Rio de Janeiro on November 15, 1889.",attraction:"🗿 Christ the Redeemer"},
     {name:"Argentina",flag:"🇦🇷",capital:"Buenos Aires",fact:"The 'Sun of May' is said to represent the sun breaking through clouds on the day of revolution.",attraction:"🌊 Iguazu Falls"},
     {name:"Chile",flag:"🇨🇱",capital:"Santiago",fact:"So similar to Texas's state flag that the two are still confused today.",attraction:"🌋 Torres del Paine"},
     {name:"Colombia",flag:"🇨🇴",capital:"Bogotá",fact:"Shares its yellow-blue-red design with Ecuador and Venezuela, all once part of one republic.",attraction:"🌈 Caño Cristales River"},
     {name:"Peru",flag:"🇵🇪",capital:"Lima",fact:"Legend says the colors came from a flock of red-and-white flamingos seen by a revolutionary general.",attraction:"🏛️ Machu Picchu"},
   ]},
-  {day:28,continent:"americas",title:"South America II",countries:[
+  {day:26,continent:"southamerica",title:"South America II",countries:[
     {name:"Venezuela",flag:"🇻🇪",capital:"Caracas",fact:"Eight stars represent the provinces that signed Venezuela's declaration of independence.",attraction:"🌊 Angel Falls (Salto Ángel)"},
     {name:"Ecuador",flag:"🇪🇨",capital:"Quito",fact:"Its coat of arms features a condor perched above Mount Chimborazo.",attraction:"🐢 Galápagos Islands"},
     {name:"Bolivia",flag:"🇧🇴",capital:"Sucre",fact:"Red, yellow, and green represent its animals, minerals, and lush landscapes.",attraction:"🧂 Salar de Uyuni Salt Flat"},
     {name:"Paraguay",flag:"🇵🇾",capital:"Asunción",fact:"The only national flag in the world with a different emblem on each side.",attraction:"🌊 Iguazú Falls (PY side)"},
     {name:"Uruguay",flag:"🇺🇾",capital:"Montevideo",fact:"The 'Sun of May' echoes Argentina's flag, reflecting their shared independence history.",attraction:"🏖️ Punta del Este Beach"},
   ]},
-  {day:29,continent:"americas",title:"Guianas & More",countries:[
+  {day:27,continent:"northamerica",title:"Guianas & More",countries:[
     {name:"Guyana",flag:"🇬🇾",capital:"Georgetown",fact:"Nicknamed 'The Golden Arrowhead' for the shape pointing toward a brighter future.",attraction:"🌊 Kaieteur Falls"},
     {name:"Suriname",flag:"🇸🇷",capital:"Paramaribo",fact:"A central yellow star represents unity among all of the country's ethnic groups.",attraction:"🌿 Central Suriname Nature Reserve"},
     {name:"El Salvador",flag:"🇸🇻",capital:"San Salvador",fact:"Shares its blue-white-blue design with several other former Federal Republic of Central America states.",attraction:"🌋 Ruta de las Flores"},
@@ -459,55 +445,26 @@ const DAYS = [
     {name:"Antigua and Barbuda",flag:"🇦🇬",capital:"Saint John's",fact:"A rising gold sun against black represents the dawn of independence; the red, white, and blue echo the sea, sand, and sky.",attraction:"🏖️ Nelson's Dockyard National Park"},
   ]},
   // ── OCEANIA ──
-  {day:30,continent:"oceania",title:"Oceania I",countries:[
+  {day:28,continent:"oceania",title:"Oceania I",countries:[
     {name:"Australia",flag:"🇦🇺",capital:"Canberra",fact:"The Southern Cross constellation is mirrored exactly as seen in the night sky.",attraction:"🏛️ Sydney Opera House"},
     {name:"New Zealand",flag:"🇳🇿",capital:"Wellington",fact:"Also shows the Southern Cross, but with only four stars in red instead of Australia's five.",attraction:"🌋 Milford Sound"},
     {name:"Fiji",flag:"🇫🇯",capital:"Suva",fact:"Still carries the Union Jack, one of the few Pacific nations to keep it after independence.",attraction:"🏝️ Yasawa Islands"},
     {name:"Papua New Guinea",flag:"🇵🇬",capital:"Port Moresby",fact:"A bird-of-paradise and the Southern Cross split the flag diagonally in red and black.",attraction:"🦜 Kokoda Track"},
     {name:"Samoa",flag:"🇼🇸",capital:"Apia",fact:"Its Southern Cross stars are white outlined in red, on a deep blue field.",attraction:"🌊 To Sua Ocean Trench"},
   ]},
-  {day:31,continent:"oceania",title:"Oceania II",countries:[
+  {day:29,continent:"oceania",title:"Oceania II",countries:[
     {name:"Tonga",flag:"🇹🇴",capital:"Nukuʻalofa",fact:"A red cross on white is so sacred that, by law, its design can never be altered.",attraction:"🐋 Whale Watching Vava'u"},
     {name:"Vanuatu",flag:"🇻🇺",capital:"Port Vila",fact:"Features a boar's tusk and fern leaves, symbols of prosperity and peace.",attraction:"🌋 Yasur Volcano"},
     {name:"Solomon Islands",flag:"🇸🇧",capital:"Honiara",fact:"Five stars represent the five main island groups making up the nation.",attraction:"🌊 Marovo Lagoon"},
     {name:"Palau",flag:"🇵🇼",capital:"Ngerulmud",fact:"A golden full moon off-center on blue is said to represent peace, love, and tranquility.",attraction:"🪼 Jellyfish Lake"},
     {name:"Marshall Islands",flag:"🇲🇭",capital:"Majuro",fact:"Diagonal stripes represent the equator, with rays from a star showing the islands' location near it.",attraction:"🏄 Bikini Atoll Dive Sites"},
   ]},
-  {day:32,continent:"oceania",title:"Pacific Islands",countries:[
+  {day:30,continent:"oceania",title:"Pacific Islands",countries:[
     {name:"Kiribati",flag:"🇰🇮",capital:"South Tarawa",fact:"A golden sun and frigatebird soar over blue and white waves, capturing a nation of scattered atolls.",attraction:"🦅 Christmas Island Bird Watching"},
     {name:"Micronesia",flag:"🇫🇲",capital:"Palikir",fact:"Four stars represent the four states: Chuuk, Pohnpei, Kosrae, and Yap.",attraction:"🤿 Truk Lagoon WWII Wrecks"},
     {name:"Tuvalu",flag:"🇹🇻",capital:"Funafuti",fact:"Nine yellow stars represent the nine islands; light blue mirrors the surrounding Pacific.",attraction:"🏝️ Funafuti Conservation Area"},
     {name:"Nauru",flag:"🇳🇷",capital:"Yaren",fact:"A yellow star sits below a yellow stripe, representing the island's location just south of the equator.",attraction:"🏊 Anabar Beach"},
     {name:"Niue",flag:"🇳🇺",capital:"Alofi",fact:"A gold star in the corner honors its close association with New Zealand.",attraction:"🐬 Avatele Chasm Swimming"},
-  ]},
-  {day:33,continent:"oceania",title:"Australasia Extras",countries:[
-    {name:"Cook Islands",flag:"🇨🇰",capital:"Avarua",fact:"Fifteen stars represent the fifteen islands; the Union Jack reflects its ties to New Zealand.",attraction:"🌺 Te Vara Nui Village"},
-    {name:"Tokelau",flag:"🇹🇰",capital:"Nukunonu",fact:"A yellow canoe and Southern Cross represent navigation heritage.",attraction:"🌊 Atafu Atoll Lagoon"},
-    {name:"Wallis & Futuna",flag:"🇼🇫",capital:"Mata-Utu",fact:"Uses the French tricolor with a local 'Uvea' cross in the canton.",attraction:"🏝️ Lake Lalolalo Crater"},
-    {name:"French Polynesia",flag:"🇵🇫",capital:"Papeete",fact:"Five people in a canoe under a rising sun represent the five archipelagoes.",attraction:"🏝️ Bora Bora Lagoon"},
-    {name:"New Caledonia",flag:"🇳🇨",capital:"Nouméa",fact:"Uses the French tricolor; a local Kanak flag — blue, red, and green with a yellow disc — is also flown.",attraction:"🌊 Blue Lagoon Île des Pins"},
-  ]},
-  // ── MICRONATIONS & MORE ──
-  {day:34,continent:"micro",title:"Micronations & City-States",countries:[
-    {name:"Monaco",flag:"🇲🇨",capital:"Monaco",fact:"Almost identical to Indonesia's flag, just in a more square shape.",attraction:"🎰 Monte Carlo Casino"},
-    {name:"Liechtenstein",flag:"🇱🇮",capital:"Vaduz",fact:"A gold crown was added in 1937 after officials noticed it was identical to Haiti's flag at the Olympics.",attraction:"🏰 Vaduz Castle"},
-    {name:"Andorra",flag:"🇦🇩",capital:"Andorra la Vella",fact:"Its coat of arms includes a cow, a reminder of the nation's pastoral roots in the Pyrenees.",attraction:"⛷️ Grandvalira Ski Resort"},
-    {name:"Vatican City",flag:"🇻🇦",capital:"Vatican City",fact:"One of only two square flags in the world, featuring the papal tiara and crossed keys.",attraction:"🎨 Sistine Chapel"},
-    {name:"Iceland",flag:"🇮🇸",capital:"Reykjavik",fact:"Red, white, and blue represent fire, ice, and the ocean that shape the island.",attraction:"♨️ Blue Lagoon Geothermal Spa"},
-  ]},
-  {day:35,continent:"micro",title:"Emerging & Small Nations",countries:[
-    {name:"Kosovo",flag:"🇽🇰",capital:"Pristina",fact:"One of the world's newest countries (declared 2008), its flag shows a gold map of Kosovo above six stars representing its six main ethnic communities.",attraction:"🐻 Bear Sanctuary Prishtina"},
-    {name:"Montenegro",flag:"🇲🇪",capital:"Podgorica",fact:"A golden double-headed eagle on a red field comes from the coat of arms of the historic Petrović-Njegoš dynasty.",attraction:"🏔️ Bay of Kotor"},
-    {name:"North Macedonia",flag:"🇲🇰",capital:"Skopje",fact:"The 'Sun of Liberty' — eight golden rays spreading from a central disc on red — replaced a disputed ancient Vergina Sun design in 1995.",attraction:"🏛️ Ohrid Old Town & Lake"},
-    {name:"Djibouti",flag:"🇩🇯",capital:"Djibouti",fact:"A red triangle represents the blood spilled in the struggle for independence.",attraction:"🦈 Whale Shark Snorkeling"},
-    {name:"Bahrain",flag:"🇧🇭",capital:"Manama",fact:"Five triangles pointing right represent the Five Pillars of Islam.",attraction:"🌳 Tree of Life Bahrain"},
-  ]},
-  {day:36,continent:"micro",title:"Missing Maps & Hidden Gems",countries:[
-    {name:"Sudan",flag:"🇸🇩",capital:"Khartoum",fact:"A green triangle on the hoist represents Islam and agriculture; the rest uses Pan-Arab black, white, and red.",attraction:"🏺 Pyramids of Meroë"},
-    {name:"Syria",flag:"🇸🇾",capital:"Damascus",fact:"Two green stars were added in 1958 to represent unity with Egypt, and have remained on the flag even after the union dissolved.",attraction:"🏛️ Ancient City of Damascus"},
-    {name:"Tajikistan",flag:"🇹🇯",capital:"Dushanbe",fact:"A golden crown flanked by an arc of seven stars sits at the center, symbolizing sovereignty and unity of the people.",attraction:"🏔️ Iskanderkul Lake"},
-    {name:"Uganda",flag:"🇺🇬",capital:"Kampala",fact:"A grey crowned crane stands at the center — Uganda's national bird, representing the peaceful character of its people.",attraction:"🦍 Bwindi Impenetrable Forest"},
-    {name:"Iraq",flag:"🇮🇶",capital:"Baghdad",fact:"The phrase 'Allahu Akbar' in Arabic script runs across the center — it was written in Saddam Hussein's own handwriting in 1991 and has remained through subsequent governments.",attraction:"🏛️ Ctesiphon Arch (Taq Kasra)"},
   ]},
 ];
 
@@ -517,6 +474,48 @@ const TOTAL_DAYS = DAYS.length;
 const ALL_COUNTRIES = Array.from(
   new Map(DAYS.flatMap(d=>d.countries).map(c=>[c.name,c])).values()
 );
+
+/* ── Commonly-confused "lookalike" flag groups (for Game 2) ── */
+const LOOKALIKE_GROUPS = [
+  ["Indonesia","Poland"],
+  ["Romania","Moldova"],
+  ["Netherlands","Luxembourg"],
+  ["Ireland","Ivory Coast"],
+  ["Colombia","Ecuador","Venezuela"],
+  ["Australia","New Zealand"],
+  ["Slovakia","Slovenia","Russia"],
+  ["Norway","Sweden","Finland","Denmark"],
+  ["Mali","Guinea"],
+];
+
+/* ── Visual clues for "Spot the Flag" (Game 4) ──
+   Each clue names a visual feature of one flag; distractors are
+   flags that clearly do NOT show that feature. ── */
+const VISUAL_CLUES = [
+  {clue:"Which flag has a red sun disc in the center?",answer:"Japan",distractors:["Norway","Germany","Kenya"]},
+  {clue:"Which flag has a red maple leaf?",answer:"Canada",distractors:["Mexico","United States","United Kingdom"]},
+  {clue:"Which flag has a crescent moon and star?",answer:"Turkey",distractors:["Greece","Spain","Poland"]},
+  {clue:"Which flag has a navy wheel with 24 spokes?",answer:"India",distractors:["Sri Lanka","Nepal","Bangladesh"]},
+  {clue:"Which flag is made of two stacked triangles instead of a rectangle?",answer:"Nepal",distractors:["United Kingdom","Brazil","Egypt"]},
+  {clue:"Which flag is a perfect square?",answer:"Switzerland",distractors:["Canada","Mexico","Spain"]},
+  {clue:"Which flag shows an eagle eating a snake?",answer:"Mexico",distractors:["Egypt","Poland","United States"]},
+  {clue:"Which flag shows a bird-of-paradise?",answer:"Papua New Guinea",distractors:["Australia","Fiji","Samoa"]},
+  {clue:"Which flag features an AK-47 rifle?",answer:"Mozambique",distractors:["Angola","South Africa","Kenya"]},
+  {clue:"Which flag shows a cedar tree?",answer:"Lebanon",distractors:["Ireland","Nigeria","Saudi Arabia"]},
+  {clue:"Which flag has a Star of David?",answer:"Israel",distractors:["Turkey","Jordan","Lebanon"]},
+  {clue:"Which flag has a taegeuk (yin-yang) circle?",answer:"South Korea",distractors:["Japan","China","Mongolia"]},
+  {clue:"Which flag shows a resplendent quetzal bird?",answer:"Guatemala",distractors:["Honduras","Belize","Panama"]},
+  {clue:"Which flag shows a soapstone bird symbol?",answer:"Zimbabwe",distractors:["Zambia","Botswana","Namibia"]},
+  {clue:"Which flag shows a lion holding a sword?",answer:"Sri Lanka",distractors:["India","Nepal","Bangladesh"]},
+  {clue:"Which flag has 27 white stars mapping the night sky?",answer:"Brazil",distractors:["Argentina","Chile","Uruguay"]},
+  {clue:"Which flag shows a white khanjar dagger?",answer:"Oman",distractors:["Saudi Arabia","Qatar","Kuwait"]},
+  {clue:"Which flag shows a broken trident?",answer:"Barbados",distractors:["Bahamas","Jamaica","Trinidad and Tobago"]},
+  {clue:"Which flag shows an armillary sphere?",answer:"Portugal",distractors:["Spain","France","Italy"]},
+  {clue:"Which flag has a Bible depicted on it?",answer:"Dominican Republic",distractors:["Haiti","Cuba","Jamaica"]},
+  {clue:"Which flag has light blue stripes and a golden 'Sun of May'?",answer:"Argentina",distractors:["France","Nigeria","Jamaica"]},
+  {clue:"Which flag shows a golden condor above a mountain?",answer:"Ecuador",distractors:["Peru","Colombia","Bolivia"]},
+  {clue:"Which flag has just a single white star on plain red?",answer:"Vietnam",distractors:["China","North Korea","Turkey"]},
+];
 
 /* ================================================================
    SAVE / LOAD
@@ -611,6 +610,7 @@ function showResetModal(){
     STATE.unlockedDay=1;
     STATE.completedDays=[];
     STATE.streak=0;
+    STATE.quick5History=[];
     STATE.view="path";
     overlay.remove();
     showToast("🔄 Progress reset!");
@@ -638,6 +638,20 @@ let STATE = {
   quick5QIndex: 0,
   quick5Selected: null,
   quick5Score: 0,
+  quick5History: [],
+  lookalikeQuiz: null,
+  lookalikeQIndex: 0,
+  lookalikeSelected: null,
+  lookalikeScore: 0,
+  typeQuiz: null,
+  typeQIndex: 0,
+  typeInput: "",
+  typeSubmitted: false,
+  typeScore: 0,
+  visualQuiz: null,
+  visualQIndex: 0,
+  visualSelected: null,
+  visualScore: 0,
 };
 
 /* ================================================================
@@ -675,7 +689,29 @@ function getCollectedCountries(){
 function buildQuick5Quiz(){
   const collected=getCollectedCountries();
   if(collected.length<4) return [];
-  const pool=shuffle([...collected]).slice(0,8);
+
+  // Avoid repeating flags used in the last 3 rounds (up to 24 flags), falling
+  // back to the least-recently-used ones only if the collected pool is too
+  // small to fill a full round without repeats.
+  const history=STATE.quick5History||[];
+  const excluded=new Set(history);
+  const available=collected.filter(c=>!excluded.has(c.name));
+
+  let pool;
+  if(available.length>=8){
+    pool=shuffle(available).slice(0,8);
+  } else {
+    const need=8-available.length;
+    const orderedFallback=history
+      .map(name=>collected.find(c=>c.name===name))
+      .filter(Boolean);
+    pool=shuffle([...available, ...orderedFallback.slice(0,need)]);
+  }
+  pool=pool.slice(0,Math.min(8,pool.length));
+
+  const usedNames=pool.map(c=>c.name);
+  STATE.quick5History=[...history.filter(n=>!usedNames.includes(n)),...usedNames].slice(-24);
+
   return pool.map(c=>{
     let wrong=shuffle(collected.filter(x=>x.name!==c.name)).slice(0,3);
     if(wrong.length<3){
@@ -684,6 +720,53 @@ function buildQuick5Quiz(){
     }
     return {type:"flag",flag:c.flag,question:"Which country does this flag belong to?",answer:c.name,choices:shuffle([c,...wrong]).map(x=>x.name),fact:c.fact,capital:c.capital,attraction:c.attraction,badge:"flag"};
   });
+}
+
+function buildLookalikeQuiz(){
+  const collected=getCollectedCountries();
+  const collectedNames=new Set(collected.map(c=>c.name));
+  const eligible=LOOKALIKE_GROUPS.filter(g=>g.some(n=>collectedNames.has(n)));
+  if(eligible.length<3) return [];
+  const chosenGroups=shuffle(eligible).slice(0,5);
+  return chosenGroups.map(group=>{
+    const groupCountries=group.map(n=>ALL_COUNTRIES.find(c=>c.name===n)).filter(Boolean);
+    const collectedInGroup=groupCountries.filter(c=>collectedNames.has(c.name));
+    const target=shuffle(collectedInGroup.length?collectedInGroup:groupCountries)[0];
+    let choices=[...groupCountries];
+    if(choices.length<4){
+      const extras=shuffle(ALL_COUNTRIES.filter(x=>!group.includes(x.name)));
+      choices=[...choices,...extras.slice(0,4-choices.length)];
+    }
+    choices=shuffle(choices).slice(0,4);
+    if(!choices.find(c=>c.name===target.name)){ choices[0]=target; }
+    choices=shuffle(choices);
+    return {flag:target.flag,answer:target.name,fact:target.fact,capital:target.capital,attraction:target.attraction,choices:choices.map(x=>x.name)};
+  });
+}
+
+function buildTypeQuiz(){
+  const collected=getCollectedCountries();
+  if(collected.length<4) return [];
+  const pool=shuffle([...collected]).slice(0,5);
+  return pool.map(c=>({flag:c.flag,answer:c.name,fact:c.fact,capital:c.capital,attraction:c.attraction}));
+}
+
+function buildVisualQuiz(){
+  const collected=getCollectedCountries();
+  const collectedNames=new Set(collected.map(c=>c.name));
+  const eligible=VISUAL_CLUES.filter(c=>collectedNames.has(c.answer));
+  if(eligible.length<3) return [];
+  const chosen=shuffle(eligible).slice(0,5);
+  return chosen.map(c=>{
+    const answer=ALL_COUNTRIES.find(x=>x.name===c.answer);
+    const distractors=c.distractors.map(n=>ALL_COUNTRIES.find(x=>x.name===n)).filter(Boolean);
+    const choices=shuffle([answer,...distractors]);
+    return {clue:c.clue,answer:answer.name,fact:answer.fact,capital:answer.capital,attraction:answer.attraction,choices:choices.map(x=>({name:x.name,flag:x.flag}))};
+  });
+}
+
+function normalizeAnswer(s){
+  return (s||"").toLowerCase().trim().replace(/[^a-z0-9]/g,"");
 }
 
 /* ================================================================
@@ -717,8 +800,15 @@ function render(){
     case "lesson":       app.innerHTML=renderLesson(); break;
     case "quiz":         app.innerHTML=renderQuiz(); break;
     case "result":       app.innerHTML=renderResult(); break;
-    case "quick5":       app.innerHTML=renderQuick5Quiz(); break;
-    case "quick5result": app.innerHTML=renderQuick5Result(); break;
+    case "quickHub":      app.innerHTML=renderQuickHub(); break;
+    case "quick5":        app.innerHTML=renderQuick5Quiz(); break;
+    case "quick5result":  app.innerHTML=renderQuick5Result(); break;
+    case "lookalike":       app.innerHTML=renderLookalikeQuiz(); break;
+    case "lookalikeresult": app.innerHTML=renderLookalikeResult(); break;
+    case "typequiz":        app.innerHTML=renderTypeQuiz(); break;
+    case "typeresult":      app.innerHTML=renderTypeResult(); break;
+    case "visual":           app.innerHTML=renderVisualQuiz(); break;
+    case "visualresult":     app.innerHTML=renderVisualResult(); break;
   }
   window.scrollTo(0,0);
   bindEvents();
@@ -789,22 +879,15 @@ function renderPath(){
     <div class="continent-list">${continentSections}</div>
 
     <div class="quick5-banner slide-up" style="margin-top:36px">
-      <div class="quick5-title">⚡ Quick 8 Flag Quiz</div>
+      <div class="quick5-title">⚡ Quick Quiz</div>
       ${(()=>{
-        const collected=getCollectedCountries();
-        const count=collected.length;
-        if(count<4) return `
-          <div class="quick5-subtitle">Collect at least 4 stamps to unlock · you have ${count} so far</div>
-          <div class="quick5-pips">
-            ${[1,2,3,4,5,6,7,8].map(n=>`<div class="quick5-pip" style="opacity:${n<=count?1:0.35}">${n<=count?"✓":n}</div>`).join("")}
-          </div>
-          <button class="btn btn-gold" disabled style="opacity:0.45">🔒 Collect More Stamps</button>`;
+        const count=getCollectedCountries().length;
         return `
-          <div class="quick5-subtitle">8 flags from your ${count} collected stamp${count===1?"":"s"} · test your memory!</div>
+          <div class="quick5-subtitle">4 game modes · ${count} stamp${count===1?"":"s"} collected so far</div>
           <div class="quick5-pips">
-            <div class="quick5-pip">1</div><div class="quick5-pip">2</div><div class="quick5-pip">3</div><div class="quick5-pip">4</div><div class="quick5-pip">5</div><div class="quick5-pip">6</div><div class="quick5-pip">7</div><div class="quick5-pip">8</div>
+            <div class="quick5-pip">🎯</div><div class="quick5-pip">👀</div><div class="quick5-pip">⌨️</div><div class="quick5-pip">🧩</div>
           </div>
-          <button class="btn btn-gold" id="startQuick5">⚡ Start Quick Quiz</button>`;
+          <button class="btn btn-gold" id="openQuickHub">⚡ Play Quick Quiz</button>`;
       })()}
     </div>
   </div>`;
@@ -927,6 +1010,49 @@ function renderResult(){
 }
 
 /* ================================================================
+   QUICK QUIZ HUB — choose from 4 game modes
+================================================================ */
+function quickGameCard({emoji,title,desc,ready,lockMsg,id}){
+  return `<button class="btn btn-secondary" id="${id}" ${ready?"":"disabled"}
+    style="text-align:left;flex-direction:row;align-items:center;gap:14px;padding:16px;min-height:auto;height:auto;${ready?"":"opacity:.55"}">
+    <span style="font-size:30px;flex-shrink:0">${emoji}</span>
+    <span style="display:flex;flex-direction:column;gap:2px;flex:1">
+      <span style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;color:var(--ink)">${title}</span>
+      <span style="font-size:12.5px;color:var(--ink-soft);font-weight:600">${ready?desc:lockMsg}</span>
+    </span>
+    <span style="font-size:20px;flex-shrink:0">${ready?"▶️":"🔒"}</span>
+  </button>`;
+}
+
+function renderQuickHub(){
+  const collected=getCollectedCountries();
+  const count=collected.length;
+  const collectedNames=new Set(collected.map(c=>c.name));
+  const eligibleGroups=LOOKALIKE_GROUPS.filter(g=>g.some(n=>collectedNames.has(n)));
+
+  const matchReady=count>=4;
+  const lookalikeReady=eligibleGroups.length>=3;
+  const typeReady=count>=4;
+  const eligibleClues=VISUAL_CLUES.filter(c=>collectedNames.has(c.answer));
+  const visualReady=eligibleClues.length>=3;
+
+  return `<div class="quiz-wrap">
+    <div class="top-bar">
+      <button class="icon-btn" id="quitHub">✕</button>
+      <p style="flex:1;text-align:center;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:18px;margin:0">⚡ Quick Quiz</p>
+      <div style="width:44px"></div>
+    </div>
+    <p class="lesson-eyebrow" style="margin-top:0">Choose a game mode</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${quickGameCard({emoji:"🎯",title:"Flag Match",desc:"8 flags · multiple choice, from your collected stamps",ready:matchReady,lockMsg:`🔒 Collect at least 4 stamps to unlock · you have ${count}`,id:"playGame1"})}
+      ${quickGameCard({emoji:"👀",title:"Lookalike Flags",desc:"Spot the difference between commonly confused flags",ready:lookalikeReady,lockMsg:"🔒 Collect a few more stamps to unlock",id:"playGame2"})}
+      ${quickGameCard({emoji:"⌨️",title:"Type It Out",desc:"Type the country name from memory — no hints!",ready:typeReady,lockMsg:`🔒 Collect at least 4 stamps to unlock · you have ${count}`,id:"playGame3"})}
+      ${quickGameCard({emoji:"🔍",title:"Spot The Flag",desc:"A clue about a color, shape, or symbol — find the matching flag",ready:visualReady,lockMsg:"🔒 Collect a few more stamps to unlock",id:"playGame4"})}
+    </div>
+  </div>`;
+}
+
+/* ================================================================
    QUICK 5 QUIZ VIEW
 ================================================================ */
 function renderQuick5Quiz(){
@@ -991,6 +1117,236 @@ function renderQuick5Result(){
 
     <div class="result-actions">
       <button class="btn btn-gold" id="retryQ5">⚡ Play Again</button>
+      <button class="btn btn-secondary" id="backToHub">🕹️ More Games</button>
+      <button class="btn btn-secondary" id="backToPath">🗺️ Back to Atlas</button>
+    </div>
+  </div>`;
+}
+
+/* ================================================================
+   LOOKALIKE FLAGS QUIZ VIEW (Game 2)
+================================================================ */
+function renderLookalikeQuiz(){
+  const q=STATE.lookalikeQuiz[STATE.lookalikeQIndex];
+  const sel=STATE.lookalikeSelected;
+  const total=STATE.lookalikeQuiz.length;
+
+  const pips=Array.from({length:total},(_,i)=>{
+    const done=i<STATE.lookalikeQIndex;
+    const cur=i===STATE.lookalikeQIndex;
+    return `<div style="width:18px;height:10px;border-radius:999px;background:${done?"var(--gold)":cur?"rgba(230,172,0,0.45)":"var(--line)"};transition:background .3s"></div>`;
+  }).join("");
+
+  const choiceBtns=q.choices.map(ch=>{
+    const cls=sel?(ch===q.answer?" choice-correct":ch===sel?" choice-wrong":""):"";
+    return `<button class="choice-btn${cls}" ${sel?"disabled":""} data-lookalikechoice="${ch}">${ch}</button>`;
+  }).join("");
+
+  const feedback=sel?`<div class="feedback-bar feedback-enter" style="background:${sel===q.answer?"var(--green-bg)":"var(--red-bg)"};border-color:${sel===q.answer?"var(--green)":"var(--red)"}">
+    <p class="feedback-heading" style="color:${sel===q.answer?"var(--green-text)":"var(--red-text)"}">${sel===q.answer?"🎉 Correct!":"❌ "+q.answer}</p>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;font-weight:700">📍 Capital: <strong>${q.capital}</strong></p>
+    ${q.attraction?`<div class="feedback-attraction">🌟 Must-see: <strong>${q.attraction}</strong></div>`:""}
+    <p class="feedback-fact">${q.fact}</p>
+    <button class="btn ${sel===q.answer?"btn-primary":"btn-secondary"}" id="nextLookalike">${STATE.lookalikeQIndex+1>=total?"👀 See Results":"Next →"}</button>
+  </div>`:"";
+
+  return `<div class="quiz-wrap">
+    <div class="top-bar">
+      <button class="icon-btn" id="quitLookalike">✕</button>
+      <div style="display:flex;gap:6px;flex:1;justify-content:center">${pips}</div>
+      <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.lookalikeQIndex+1}/${total}</span>
+    </div>
+
+    <p class="quiz-question-label">Which country is this flag? 👀</p>
+    <div class="quiz-flag-wrap"><span class="quiz-flag">${q.flag}</span></div>
+    <div class="choices-grid">${choiceBtns}</div>
+    ${feedback}
+  </div>`;
+}
+
+/* ================================================================
+   LOOKALIKE FLAGS RESULT VIEW
+================================================================ */
+function renderLookalikeResult(){
+  const total=STATE.lookalikeQuiz.length;
+  const score=STATE.lookalikeScore;
+  const pct=total?Math.round((score/total)*100):0;
+  const tier=pct===100?100:pct>=75?75:pct>=50?50:0;
+  const msgs={100:["👁️ Eagle Eyes!","You spotted every lookalike flag perfectly!"],75:["🌟 Sharp Eyes!","You're great at telling these flags apart!"],50:["✅ Getting There!","Some of these are genuinely tricky — keep practicing!"],0:["😅 So Tricky!","These lookalike flags fool almost everyone at first."]};
+  const [title,msg]=msgs[tier];
+  const colors={100:"#7C3AED",75:"#58CC02",50:"#1CB0F6",0:"#FF4B4B"};
+  const emojis={100:"🏆",75:"🌟",50:"✅",0:"😅"};
+  const starsFilled=pct===100?3:pct>=50?2:1;
+  const stars=["⭐","⭐","⭐"].map((s,i)=>`<span style="opacity:${i<starsFilled?1:0.2};font-size:36px">${s}</span>`).join("");
+
+  return `<div class="result-wrap">
+    <div style="font-size:72px;margin-bottom:6px;animation:bounceIn .7s ease">${emojis[tier]}</div>
+    <div style="display:flex;gap:4px;margin-bottom:12px">${stars}</div>
+    <h2 class="result-title" style="color:${colors[tier]}">${title}</h2>
+    <p class="result-subtitle">Lookalike Flags Complete! · ${msg}</p>
+
+    <div class="leaderboard-card">
+      <div style="font-size:13px;color:var(--ink-soft);font-weight:800;margin-bottom:8px">Your Score</div>
+      <div style="font-size:42px;font-weight:800;color:var(--ink);margin-bottom:6px;font-family:'Baloo 2',sans-serif">${score} / ${total}</div>
+      <div class="leaderboard-bar"><div class="leaderboard-fill" style="width:${pct}%;background:var(--gold)"></div></div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-gold" id="retryLookalike">👀 Play Again</button>
+      <button class="btn btn-secondary" id="backToHub">🕹️ More Games</button>
+      <button class="btn btn-secondary" id="backToPath">🗺️ Back to Atlas</button>
+    </div>
+  </div>`;
+}
+
+/* ================================================================
+   TYPE IT OUT QUIZ VIEW (Game 3)
+================================================================ */
+function renderTypeQuiz(){
+  const q=STATE.typeQuiz[STATE.typeQIndex];
+  const total=STATE.typeQuiz.length;
+  const submitted=STATE.typeSubmitted;
+  const correct=submitted&&normalizeAnswer(STATE.typeInput)===normalizeAnswer(q.answer);
+
+  const pips=Array.from({length:total},(_,i)=>{
+    const done=i<STATE.typeQIndex;
+    const cur=i===STATE.typeQIndex;
+    return `<div style="width:18px;height:10px;border-radius:999px;background:${done?"var(--gold)":cur?"rgba(230,172,0,0.45)":"var(--line)"};transition:background .3s"></div>`;
+  }).join("");
+
+  const feedback=submitted?`<div class="feedback-bar feedback-enter" style="background:${correct?"var(--green-bg)":"var(--red-bg)"};border-color:${correct?"var(--green)":"var(--red)"}">
+    <p class="feedback-heading" style="color:${correct?"var(--green-text)":"var(--red-text)"}">${correct?"🎉 Correct!":"❌ It's "+q.answer}</p>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;font-weight:700">📍 Capital: <strong>${q.capital}</strong></p>
+    ${q.attraction?`<div class="feedback-attraction">🌟 Must-see: <strong>${q.attraction}</strong></div>`:""}
+    <p class="feedback-fact">${q.fact}</p>
+    <button class="btn ${correct?"btn-primary":"btn-secondary"}" id="nextTypeQ">${STATE.typeQIndex+1>=total?"⌨️ See Results":"Next →"}</button>
+  </div>`:"";
+
+  return `<div class="quiz-wrap">
+    <div class="top-bar">
+      <button class="icon-btn" id="quitType">✕</button>
+      <div style="display:flex;gap:6px;flex:1;justify-content:center">${pips}</div>
+      <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.typeQIndex+1}/${total}</span>
+    </div>
+
+    <p class="quiz-question-label">Type the country name! ⌨️</p>
+    <div class="quiz-flag-wrap"><span class="quiz-flag">${q.flag}</span></div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:130px">
+      <input type="text" id="typeAnswerInput" autocomplete="off" autocapitalize="words" placeholder="Type a country…"
+        value="${(STATE.typeInput||"").replace(/"/g,"&quot;")}"
+        ${submitted?"disabled":""}
+        style="width:100%;padding:15px 16px;border-radius:16px;border:2px solid var(--line);font-size:16px;font-family:inherit;font-weight:700;color:var(--ink);background:#fff"/>
+      ${!submitted?`<button class="btn btn-primary" id="submitTypeAnswer">Submit</button>`:""}
+    </div>
+    ${feedback}
+  </div>`;
+}
+
+/* ================================================================
+   TYPE IT OUT RESULT VIEW
+================================================================ */
+function renderTypeResult(){
+  const total=STATE.typeQuiz.length;
+  const score=STATE.typeScore;
+  const pct=total?Math.round((score/total)*100):0;
+  const tier=pct===100?100:pct>=75?75:pct>=50?50:0;
+  const msgs={100:["✍️ Flawless Recall!","You typed every single country from memory!"],75:["🌟 Impressive!","Your flag memory is really strong!"],50:["✅ Good Effort!","Keep practicing your spelling and recall!"],0:["😅 Tough Round!","Typing from memory is hard — try again!"]};
+  const [title,msg]=msgs[tier];
+  const colors={100:"#7C3AED",75:"#58CC02",50:"#1CB0F6",0:"#FF4B4B"};
+  const emojis={100:"🏆",75:"🌟",50:"✅",0:"😅"};
+  const starsFilled=pct===100?3:pct>=50?2:1;
+  const stars=["⭐","⭐","⭐"].map((s,i)=>`<span style="opacity:${i<starsFilled?1:0.2};font-size:36px">${s}</span>`).join("");
+
+  return `<div class="result-wrap">
+    <div style="font-size:72px;margin-bottom:6px;animation:bounceIn .7s ease">${emojis[tier]}</div>
+    <div style="display:flex;gap:4px;margin-bottom:12px">${stars}</div>
+    <h2 class="result-title" style="color:${colors[tier]}">${title}</h2>
+    <p class="result-subtitle">Type It Out Complete! · ${msg}</p>
+
+    <div class="leaderboard-card">
+      <div style="font-size:13px;color:var(--ink-soft);font-weight:800;margin-bottom:8px">Your Score</div>
+      <div style="font-size:42px;font-weight:800;color:var(--ink);margin-bottom:6px;font-family:'Baloo 2',sans-serif">${score} / ${total}</div>
+      <div class="leaderboard-bar"><div class="leaderboard-fill" style="width:${pct}%;background:var(--gold)"></div></div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-gold" id="retryType">⌨️ Play Again</button>
+      <button class="btn btn-secondary" id="backToHub">🕹️ More Games</button>
+      <button class="btn btn-secondary" id="backToPath">🗺️ Back to Atlas</button>
+    </div>
+  </div>`;
+}
+
+/* ================================================================
+   SPOT THE FLAG QUIZ VIEW (Game 4)
+================================================================ */
+function renderVisualQuiz(){
+  const q=STATE.visualQuiz[STATE.visualQIndex];
+  const sel=STATE.visualSelected;
+  const total=STATE.visualQuiz.length;
+
+  const pips=Array.from({length:total},(_,i)=>{
+    const done=i<STATE.visualQIndex;
+    const cur=i===STATE.visualQIndex;
+    return `<div style="width:18px;height:10px;border-radius:999px;background:${done?"var(--gold)":cur?"rgba(230,172,0,0.45)":"var(--line)"};transition:background .3s"></div>`;
+  }).join("");
+
+  const choiceBtns=q.choices.map(ch=>{
+    const cls=sel?(ch.name===q.answer?" choice-correct":ch.name===sel?" choice-wrong":""):"";
+    return `<button class="choice-btn${cls}" style="font-size:40px;padding:20px 10px" ${sel?"disabled":""} data-visualchoice="${ch.name}">${ch.flag}</button>`;
+  }).join("");
+
+  const feedback=sel?`<div class="feedback-bar feedback-enter" style="background:${sel===q.answer?"var(--green-bg)":"var(--red-bg)"};border-color:${sel===q.answer?"var(--green)":"var(--red)"}">
+    <p class="feedback-heading" style="color:${sel===q.answer?"var(--green-text)":"var(--red-text)"}">${sel===q.answer?"🎉 Correct! It's "+q.answer:"❌ It's "+q.answer}</p>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;font-weight:700">📍 Capital: <strong>${q.capital}</strong></p>
+    ${q.attraction?`<div class="feedback-attraction">🌟 Must-see: <strong>${q.attraction}</strong></div>`:""}
+    <p class="feedback-fact">${q.fact}</p>
+    <button class="btn ${sel===q.answer?"btn-primary":"btn-secondary"}" id="nextVisual">${STATE.visualQIndex+1>=total?"🔍 See Results":"Next →"}</button>
+  </div>`:"";
+
+  return `<div class="quiz-wrap">
+    <div class="top-bar">
+      <button class="icon-btn" id="quitVisual">✕</button>
+      <div style="display:flex;gap:6px;flex:1;justify-content:center">${pips}</div>
+      <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.visualQIndex+1}/${total}</span>
+    </div>
+
+    <p class="quiz-question-label">🔍 ${q.clue}</p>
+    <div class="choices-grid">${choiceBtns}</div>
+    ${feedback}
+  </div>`;
+}
+
+/* ================================================================
+   SPOT THE FLAG RESULT VIEW
+================================================================ */
+function renderVisualResult(){
+  const total=STATE.visualQuiz.length;
+  const score=STATE.visualScore;
+  const pct=total?Math.round((score/total)*100):0;
+  const tier=pct===100?100:pct>=75?75:pct>=50?50:0;
+  const msgs={100:["🔍 Perfect Vision!","You spotted every flag from its clue!"],75:["🌟 Sharp Spotter!","You've got a great eye for flag details!"],50:["✅ Getting There!","Keep studying those colors and symbols!"],0:["😅 Tricky Clues!","Flag details take practice — try again!"]};
+  const [title,msg]=msgs[tier];
+  const colors={100:"#7C3AED",75:"#58CC02",50:"#1CB0F6",0:"#FF4B4B"};
+  const emojis={100:"🏆",75:"🌟",50:"✅",0:"😅"};
+  const starsFilled=pct===100?3:pct>=50?2:1;
+  const stars=["⭐","⭐","⭐"].map((s,i)=>`<span style="opacity:${i<starsFilled?1:0.2};font-size:36px">${s}</span>`).join("");
+
+  return `<div class="result-wrap">
+    <div style="font-size:72px;margin-bottom:6px;animation:bounceIn .7s ease">${emojis[tier]}</div>
+    <div style="display:flex;gap:4px;margin-bottom:12px">${stars}</div>
+    <h2 class="result-title" style="color:${colors[tier]}">${title}</h2>
+    <p class="result-subtitle">Spot The Flag Complete! · ${msg}</p>
+
+    <div class="leaderboard-card">
+      <div style="font-size:13px;color:var(--ink-soft);font-weight:800;margin-bottom:8px">Your Score</div>
+      <div style="font-size:42px;font-weight:800;color:var(--ink);margin-bottom:6px;font-family:'Baloo 2',sans-serif">${score} / ${total}</div>
+      <div class="leaderboard-bar"><div class="leaderboard-fill" style="width:${pct}%;background:var(--gold)"></div></div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-gold" id="retryVisual">🔍 Play Again</button>
+      <button class="btn btn-secondary" id="backToHub">🕹️ More Games</button>
       <button class="btn btn-secondary" id="backToPath">🗺️ Back to Atlas</button>
     </div>
   </div>`;
@@ -1014,14 +1370,7 @@ function bindEvents(){
       render();
     });
   });
-  on("startQuick5","click",()=>{
-    STATE.quick5Quiz=buildQuick5Quiz();
-    STATE.quick5QIndex=0;
-    STATE.quick5Selected=null;
-    STATE.quick5Score=0;
-    STATE.view="quick5";
-    render();
-  });
+  on("openQuickHub","click",()=>{STATE.view="quickHub";render();});
   on("saveBtn","click",()=>saveState());
   on("resetBtn","click",()=>showResetModal());
 
@@ -1073,6 +1422,43 @@ function bindEvents(){
   });
   on("backToPath","click",()=>{STATE.view="path";STATE.activeDay=null;render();});
 
+  /* QUICK QUIZ HUB */
+  on("quitHub","click",()=>{STATE.view="path";render();});
+  on("backToHub","click",()=>{STATE.view="quickHub";render();});
+  on("playGame1","click",()=>{
+    STATE.quick5Quiz=buildQuick5Quiz();
+    STATE.quick5QIndex=0;
+    STATE.quick5Selected=null;
+    STATE.quick5Score=0;
+    STATE.view="quick5";
+    render();
+  });
+  on("playGame2","click",()=>{
+    STATE.lookalikeQuiz=buildLookalikeQuiz();
+    STATE.lookalikeQIndex=0;
+    STATE.lookalikeSelected=null;
+    STATE.lookalikeScore=0;
+    STATE.view="lookalike";
+    render();
+  });
+  on("playGame3","click",()=>{
+    STATE.typeQuiz=buildTypeQuiz();
+    STATE.typeQIndex=0;
+    STATE.typeInput="";
+    STATE.typeSubmitted=false;
+    STATE.typeScore=0;
+    STATE.view="typequiz";
+    render();
+  });
+  on("playGame4","click",()=>{
+    STATE.visualQuiz=buildVisualQuiz();
+    STATE.visualQIndex=0;
+    STATE.visualSelected=null;
+    STATE.visualScore=0;
+    STATE.view="visual";
+    render();
+  });
+
   /* QUICK 5 */
   on("quitQ5","click",()=>{STATE.view="path";render();});
   document.querySelectorAll("[data-q5choice]").forEach(btn=>{
@@ -1097,6 +1483,91 @@ function bindEvents(){
     STATE.quick5Quiz=buildQuick5Quiz();
     STATE.quick5QIndex=0;STATE.quick5Selected=null;STATE.quick5Score=0;
     STATE.view="quick5";render();
+  });
+
+  /* LOOKALIKE FLAGS (Game 2) */
+  on("quitLookalike","click",()=>{STATE.view="path";render();});
+  document.querySelectorAll("[data-lookalikechoice]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      if(STATE.lookalikeSelected)return;
+      const ch=btn.dataset.lookalikechoice;
+      STATE.lookalikeSelected=ch;
+      const correct=ch===STATE.lookalikeQuiz[STATE.lookalikeQIndex].answer;
+      if(correct){STATE.lookalikeScore++;launchConfetti(15);}
+      render();
+    });
+  });
+  on("nextLookalike","click",()=>{
+    if(STATE.lookalikeQIndex+1>=STATE.lookalikeQuiz.length){
+      if(STATE.lookalikeScore===STATE.lookalikeQuiz.length)launchConfetti(80);
+      STATE.view="lookalikeresult";render();
+    } else {
+      STATE.lookalikeQIndex++;STATE.lookalikeSelected=null;render();
+    }
+  });
+  on("retryLookalike","click",()=>{
+    STATE.lookalikeQuiz=buildLookalikeQuiz();
+    STATE.lookalikeQIndex=0;STATE.lookalikeSelected=null;STATE.lookalikeScore=0;
+    STATE.view="lookalike";render();
+  });
+
+  /* TYPE IT OUT (Game 3) */
+  on("quitType","click",()=>{STATE.view="path";render();});
+  const typeInputEl=$("typeAnswerInput");
+  if(typeInputEl){
+    typeInputEl.addEventListener("input",e=>{STATE.typeInput=e.target.value;});
+    typeInputEl.addEventListener("keydown",e=>{
+      if(e.key==="Enter"){e.preventDefault();submitTypeAnswer();}
+    });
+    typeInputEl.focus();
+  }
+  on("submitTypeAnswer","click",()=>submitTypeAnswer());
+  function submitTypeAnswer(){
+    if(STATE.typeSubmitted)return;
+    const q=STATE.typeQuiz[STATE.typeQIndex];
+    STATE.typeSubmitted=true;
+    const correct=normalizeAnswer(STATE.typeInput)===normalizeAnswer(q.answer);
+    if(correct){STATE.typeScore++;launchConfetti(15);}
+    render();
+  }
+  on("nextTypeQ","click",()=>{
+    if(STATE.typeQIndex+1>=STATE.typeQuiz.length){
+      if(STATE.typeScore===STATE.typeQuiz.length)launchConfetti(80);
+      STATE.view="typeresult";render();
+    } else {
+      STATE.typeQIndex++;STATE.typeInput="";STATE.typeSubmitted=false;render();
+    }
+  });
+  on("retryType","click",()=>{
+    STATE.typeQuiz=buildTypeQuiz();
+    STATE.typeQIndex=0;STATE.typeInput="";STATE.typeSubmitted=false;STATE.typeScore=0;
+    STATE.view="typequiz";render();
+  });
+
+  /* SPOT THE FLAG (Game 4) */
+  on("quitVisual","click",()=>{STATE.view="path";render();});
+  document.querySelectorAll("[data-visualchoice]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      if(STATE.visualSelected)return;
+      const ch=btn.dataset.visualchoice;
+      STATE.visualSelected=ch;
+      const correct=ch===STATE.visualQuiz[STATE.visualQIndex].answer;
+      if(correct){STATE.visualScore++;launchConfetti(15);}
+      render();
+    });
+  });
+  on("nextVisual","click",()=>{
+    if(STATE.visualQIndex+1>=STATE.visualQuiz.length){
+      if(STATE.visualScore===STATE.visualQuiz.length)launchConfetti(80);
+      STATE.view="visualresult";render();
+    } else {
+      STATE.visualQIndex++;STATE.visualSelected=null;render();
+    }
+  });
+  on("retryVisual","click",()=>{
+    STATE.visualQuiz=buildVisualQuiz();
+    STATE.visualQIndex=0;STATE.visualSelected=null;STATE.visualScore=0;
+    STATE.view="visual";render();
   });
 }
 
