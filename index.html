@@ -123,7 +123,6 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 .quiz-wrap{padding:16px 16px 28px;max-width:480px;margin:0 auto;width:100%;display:flex;flex-direction:column;flex:1}
 .quiz-progress-track{flex:1;height:14px;background:var(--line);border-radius:999px;overflow:hidden}
 .quiz-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent1),var(--accent2));border-radius:999px;transition:width .4s ease}
-.hearts-row{display:flex;gap:3px;font-size:19px;flex-shrink:0}
 .quiz-question-label{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin:16px 0 10px;text-align:center}
 .quiz-flag-wrap{display:flex;justify-content:center;margin-bottom:18px}
 .quiz-flag{font-size:clamp(76px,24vw,100px);line-height:1;display:block;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.15));animation:bounceIn .5s ease}
@@ -161,11 +160,6 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 /* ── CONFETTI ── */
 .confetti-piece{position:fixed;width:10px;height:10px;border-radius:2px;pointer-events:none;z-index:9999;animation:confettiFall linear forwards}
 
-/* ── XP BAR ── */
-.xp-row{display:flex;align-items:center;gap:10px;margin-bottom:20px}
-.xp-track{flex:1;height:10px;background:var(--line);border-radius:999px;overflow:hidden}
-.xp-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--orange));border-radius:999px;transition:width .8s ease}
-.xp-label{font-size:11.5px;color:var(--ink-soft);font-weight:800;white-space:nowrap}
 
 /* ── LEADERBOARD CARD ── */
 .leaderboard-card{width:100%;max-width:360px;background:#fff;border-radius:18px;border:2px solid var(--line);padding:18px;margin:14px 0}
@@ -475,6 +469,10 @@ const ALL_COUNTRIES = Array.from(
   new Map(DAYS.flatMap(d=>d.countries).map(c=>[c.name,c])).values()
 );
 
+/* ── Country → continent lookup (used to build harder distractors) ── */
+const COUNTRY_CONTINENT = {};
+DAYS.forEach(d=>{ d.countries.forEach(c=>{ COUNTRY_CONTINENT[c.name]=d.continent; }); });
+
 /* ── Commonly-confused "lookalike" flag groups (for Game 2) ── */
 const LOOKALIKE_GROUPS = [
   ["Indonesia","Poland"],
@@ -580,6 +578,16 @@ async function loadState(){
   } catch(e){}
 }
 
+function showFlagZoom(flag){
+  const overlay=document.createElement("div");
+  overlay.className="modal-overlay";
+  overlay.innerHTML=`<div class="modal-box bounce-in" style="cursor:zoom-out;padding:44px 24px">
+    <span style="font-size:min(50vw,220px);line-height:1;display:block;filter:drop-shadow(0 8px 20px rgba(0,0,0,0.25))">${flag}</span>
+  </div>`;
+  overlay.addEventListener("click",()=>overlay.remove());
+  document.body.appendChild(overlay);
+}
+
 function showToast(msg){
   const existing=document.querySelector(".save-toast");
   if(existing) existing.remove();
@@ -611,6 +619,7 @@ function showResetModal(){
     STATE.completedDays=[];
     STATE.streak=0;
     STATE.quick5History=[];
+    STATE.collapsedContinents=[];
     STATE.view="path";
     overlay.remove();
     showToast("🔄 Progress reset!");
@@ -633,7 +642,7 @@ let STATE = {
   qIndex: 0,
   selected: null,
   score: 0,
-  hearts: 3,
+  collapsedContinents: [],
   quick5Quiz: null,
   quick5QIndex: 0,
   quick5Selected: null,
@@ -652,6 +661,10 @@ let STATE = {
   visualQIndex: 0,
   visualSelected: null,
   visualScore: 0,
+  continentQuiz: null,
+  continentQIndex: 0,
+  continentSelected: null,
+  continentScore: 0,
 };
 
 /* ================================================================
@@ -667,6 +680,20 @@ function shuffle(arr){
 }
 
 function dayLookup(n){return DAYS.find(d=>d.day===n);}
+
+/* Picks distractors that are harder to eliminate: same-continent countries
+   are pulled first (so choices can't be ruled out just by "wrong region"),
+   falling back to any other country only if the region runs short. */
+function pickHardDistractors(correct, pool, count){
+  const continent=COUNTRY_CONTINENT[correct.name];
+  const sameContinent=pool.filter(x=>x.name!==correct.name&&COUNTRY_CONTINENT[x.name]===continent);
+  const elsewhere=pool.filter(x=>x.name!==correct.name&&COUNTRY_CONTINENT[x.name]!==continent);
+  let picks=shuffle(sameContinent).slice(0,count);
+  if(picks.length<count){
+    picks=[...picks,...shuffle(elsewhere).slice(0,count-picks.length)];
+  }
+  return picks;
+}
 
 function buildDayQuiz(dayData){
   return shuffle(dayData.countries.map(c=>{
@@ -713,10 +740,11 @@ function buildQuick5Quiz(){
   STATE.quick5History=[...history.filter(n=>!usedNames.includes(n)),...usedNames].slice(-24);
 
   return pool.map(c=>{
-    let wrong=shuffle(collected.filter(x=>x.name!==c.name)).slice(0,3);
+    let wrong=pickHardDistractors(c,collected,3);
     if(wrong.length<3){
-      const extras=shuffle(ALL_COUNTRIES.filter(x=>x.name!==c.name&&!wrong.find(w=>w.name===x.name)));
-      wrong=[...wrong,...extras.slice(0,3-wrong.length)];
+      const usedNames=new Set([c.name,...wrong.map(w=>w.name)]);
+      const extraPool=ALL_COUNTRIES.filter(x=>!usedNames.has(x.name));
+      wrong=[...wrong,...pickHardDistractors(c,extraPool,3-wrong.length)];
     }
     return {type:"flag",flag:c.flag,question:"Which country does this flag belong to?",answer:c.name,choices:shuffle([c,...wrong]).map(x=>x.name),fact:c.fact,capital:c.capital,attraction:c.attraction,badge:"flag"};
   });
@@ -765,6 +793,19 @@ function buildVisualQuiz(){
   });
 }
 
+function buildContinentQuiz(){
+  const collected=getCollectedCountries();
+  if(collected.length<4) return [];
+  const count=Math.min(6,collected.length);
+  const pool=shuffle([...collected]).slice(0,count);
+  return pool.map(c=>{
+    const contId=COUNTRY_CONTINENT[c.name];
+    const answer=CONTINENTS.find(x=>x.id===contId).name;
+    const wrongContinents=shuffle(CONTINENTS.filter(x=>x.id!==contId)).slice(0,3).map(x=>x.name);
+    return {flag:c.flag,name:c.name,answer,fact:c.fact,capital:c.capital,attraction:c.attraction,choices:shuffle([answer,...wrongContinents])};
+  });
+}
+
 function normalizeAnswer(s){
   return (s||"").toLowerCase().trim().replace(/[^a-z0-9]/g,"");
 }
@@ -809,6 +850,8 @@ function render(){
     case "typeresult":      app.innerHTML=renderTypeResult(); break;
     case "visual":           app.innerHTML=renderVisualQuiz(); break;
     case "visualresult":     app.innerHTML=renderVisualResult(); break;
+    case "continent":        app.innerHTML=renderContinentQuiz(); break;
+    case "continentresult":  app.innerHTML=renderContinentResult(); break;
   }
   window.scrollTo(0,0);
   bindEvents();
@@ -819,7 +862,6 @@ function render(){
 ================================================================ */
 function renderPath(){
   const pct=Math.min(100,((STATE.unlockedDay-1)/TOTAL_DAYS)*100);
-  const xpPct=((STATE.completedDays.length)/TOTAL_DAYS)*100;
 
   const continentSections=CONTINENTS.map(cont=>{
     const days=cont.days.map(n=>dayLookup(n)).filter(Boolean);
@@ -843,13 +885,15 @@ function renderPath(){
         <span class="day-caption">${!locked?`<span class="flags">${preview}</span>`:""}${d.title.split(" ").slice(0,2).join(" ")}</span>
       </div>`;
     }).join("");
+    const collapsed=STATE.collapsedContinents.includes(cont.id);
     return `<section>
-      <div class="chapter-header" style="--chap-color:${cont.color}">
+      <button type="button" class="chapter-header" data-continent="${cont.id}" style="--chap-color:${cont.color};width:100%;text-align:left">
         <span class="chapter-dot"></span>
         <h2 class="chapter-title">${cont.name}</h2>
         <span class="chapter-sub">${cont.days.filter(n=>STATE.completedDays.includes(n)).length}/${cont.days.length}</span>
-      </div>
-      <div class="day-path">${nodes}</div>
+        <span style="color:#fff;font-size:13px;flex-shrink:0;transition:transform .2s ease;transform:rotate(${collapsed?"-90deg":"0deg"})">▼</span>
+      </button>
+      ${collapsed?"":`<div class="day-path">${nodes}</div>`}
     </section>`;
   }).join("");
 
@@ -869,12 +913,6 @@ function renderPath(){
       <div class="progress-fill" style="width:${pct}%"></div>
     </div>
     <span class="progress-label">Day ${Math.min(STATE.unlockedDay,TOTAL_DAYS)} of ${TOTAL_DAYS} · ${STATE.completedDays.length} stamps collected</span>
-
-    <div class="xp-row">
-      <span class="xp-label">⭐ XP</span>
-      <div class="xp-track"><div class="xp-fill" style="width:${xpPct}%"></div></div>
-      <span class="xp-label">${STATE.completedDays.length*100}/${TOTAL_DAYS*100}</span>
-    </div>
 
     <div class="continent-list">${continentSections}</div>
 
@@ -914,7 +952,7 @@ function renderLesson(){
     <p class="lesson-eyebrow">Day ${d.day} · ${d.title}</p>
 
     <div class="stamp-card stamp-enter" key="${STATE.cardIndex}">
-      <span class="stamp-flag">${c.flag}</span>
+      <button type="button" id="zoomFlagBtn" data-flag="${c.flag}" style="background:none;border:none;padding:0;cursor:zoom-in;display:block;margin:0 auto"><span class="stamp-flag">${c.flag}</span></button>
       <h3 class="stamp-name">${c.name}</h3>
       <span class="stamp-capital">📍 ${c.capital}</span>
       ${c.attraction?`<span class="stamp-attraction">🌟 ${c.attraction}</span>`:""}
@@ -939,7 +977,6 @@ function renderQuiz(){
   const q=STATE.quiz[STATE.qIndex];
   const sel=STATE.selected;
   const pct=(STATE.qIndex/STATE.quiz.length)*100;
-  const hearts=[0,1,2].map(i=>`<span style="opacity:${i<STATE.hearts?1:0.22}">❤️</span>`).join("");
 
   const choiceBtns=q.choices.map(ch=>{
     return `<button class="choice-btn${sel?(ch===q.answer?" choice-correct":ch===sel?" choice-wrong":""):""}"
@@ -958,7 +995,6 @@ function renderQuiz(){
     <div class="top-bar">
       <button class="icon-btn" id="quitQuiz">✕</button>
       <div class="quiz-progress-track"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
-      <div class="hearts-row">${hearts}</div>
     </div>
 
     <p class="quiz-question-label">Which country is this? 🤔</p>
@@ -997,13 +1033,12 @@ function renderResult(){
     <div class="result-stats-row">
       <div class="result-stat"><span class="result-stat-num">${STATE.score}/${STATE.quiz.length}</span><span class="result-stat-label">Correct</span></div>
       <div class="result-stat"><span class="result-stat-num">${pct}%</span><span class="result-stat-label">Score</span></div>
-      <div class="result-stat"><span class="result-stat-num">${STATE.hearts}❤️</span><span class="result-stat-label">Hearts left</span></div>
     </div>
 
     <p class="result-message">${msg}${passed&&unlockedNext?" Tomorrow's stamp is now unlocked!":""}</p>
 
     <div class="result-actions">
-      ${!passed?`<button class="btn btn-primary" id="retryQuiz">🔄 Retry Quiz</button>`:""}
+      <button class="btn ${passed?"btn-secondary":"btn-primary"}" id="retryQuiz">🔄 Play Again</button>
       <button class="btn ${passed?"btn-primary":"btn-secondary"}" id="backToPath">🗺️ Back to Map</button>
     </div>
   </div>`;
@@ -1035,6 +1070,7 @@ function renderQuickHub(){
   const typeReady=count>=4;
   const eligibleClues=VISUAL_CLUES.filter(c=>collectedNames.has(c.answer));
   const visualReady=eligibleClues.length>=3;
+  const continentReady=count>=4;
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
@@ -1048,6 +1084,7 @@ function renderQuickHub(){
       ${quickGameCard({emoji:"👀",title:"Lookalike Flags",desc:"Spot the difference between commonly confused flags",ready:lookalikeReady,lockMsg:"🔒 Collect a few more stamps to unlock",id:"playGame2"})}
       ${quickGameCard({emoji:"⌨️",title:"Type It Out",desc:"Type the country name from memory — no hints!",ready:typeReady,lockMsg:`🔒 Collect at least 4 stamps to unlock · you have ${count}`,id:"playGame3"})}
       ${quickGameCard({emoji:"🔍",title:"Spot The Flag",desc:"A clue about a color, shape, or symbol — find the matching flag",ready:visualReady,lockMsg:"🔒 Collect a few more stamps to unlock",id:"playGame4"})}
+      ${quickGameCard({emoji:"🌍",title:"What Continent?",desc:"See a country name — pick the continent it's on",ready:continentReady,lockMsg:`🔒 Collect at least 4 stamps to unlock · you have ${count}`,id:"playGame5"})}
     </div>
   </div>`;
 }
@@ -1293,7 +1330,7 @@ function renderVisualQuiz(){
 
   const choiceBtns=q.choices.map(ch=>{
     const cls=sel?(ch.name===q.answer?" choice-correct":ch.name===sel?" choice-wrong":""):"";
-    return `<button class="choice-btn${cls}" style="font-size:40px;padding:20px 10px" ${sel?"disabled":""} data-visualchoice="${ch.name}">${ch.flag}</button>`;
+    return `<button class="choice-btn${cls}" ${sel?"disabled":""} data-visualchoice="${ch.name}">${ch.name}</button>`;
   }).join("");
 
   const feedback=sel?`<div class="feedback-bar feedback-enter" style="background:${sel===q.answer?"var(--green-bg)":"var(--red-bg)"};border-color:${sel===q.answer?"var(--green)":"var(--red)"}">
@@ -1353,6 +1390,82 @@ function renderVisualResult(){
 }
 
 /* ================================================================
+   WHAT CONTINENT? QUIZ VIEW (Game 5)
+================================================================ */
+function renderContinentQuiz(){
+  const q=STATE.continentQuiz[STATE.continentQIndex];
+  const sel=STATE.continentSelected;
+  const total=STATE.continentQuiz.length;
+
+  const pips=Array.from({length:total},(_,i)=>{
+    const done=i<STATE.continentQIndex;
+    const cur=i===STATE.continentQIndex;
+    return `<div style="width:18px;height:10px;border-radius:999px;background:${done?"var(--gold)":cur?"rgba(230,172,0,0.45)":"var(--line)"};transition:background .3s"></div>`;
+  }).join("");
+
+  const choiceBtns=q.choices.map(ch=>{
+    const cls=sel?(ch===q.answer?" choice-correct":ch===sel?" choice-wrong":""):"";
+    return `<button class="choice-btn${cls}" ${sel?"disabled":""} data-continentchoice="${ch}">${ch}</button>`;
+  }).join("");
+
+  const feedback=sel?`<div class="feedback-bar feedback-enter" style="background:${sel===q.answer?"var(--green-bg)":"var(--red-bg)"};border-color:${sel===q.answer?"var(--green)":"var(--red)"}">
+    <p class="feedback-heading" style="color:${sel===q.answer?"var(--green-text)":"var(--red-text)"}">${sel===q.answer?"🎉 Correct!":"❌ It's "+q.answer}</p>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;font-weight:700">📍 Capital: <strong>${q.capital}</strong></p>
+    ${q.attraction?`<div class="feedback-attraction">🌟 Must-see: <strong>${q.attraction}</strong></div>`:""}
+    <p class="feedback-fact">${q.fact}</p>
+    <button class="btn ${sel===q.answer?"btn-primary":"btn-secondary"}" id="nextContinent">${STATE.continentQIndex+1>=total?"🌍 See Results":"Next →"}</button>
+  </div>`:"";
+
+  return `<div class="quiz-wrap">
+    <div class="top-bar">
+      <button class="icon-btn" id="quitContinent">✕</button>
+      <div style="display:flex;gap:6px;flex:1;justify-content:center">${pips}</div>
+      <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.continentQIndex+1}/${total}</span>
+    </div>
+
+    <p class="quiz-question-label">🌍 Which continent is this country on?</p>
+    <h3 style="text-align:center;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:28px;margin:18px 0 24px">${q.name}</h3>
+    <div class="choices-grid">${choiceBtns}</div>
+    ${feedback}
+  </div>`;
+}
+
+/* ================================================================
+   WHAT CONTINENT? RESULT VIEW
+================================================================ */
+function renderContinentResult(){
+  const total=STATE.continentQuiz.length;
+  const score=STATE.continentScore;
+  const pct=total?Math.round((score/total)*100):0;
+  const tier=pct===100?100:pct>=75?75:pct>=50?50:0;
+  const msgs={100:["🌍 World Master!","You know exactly where every country sits!"],75:["🌟 Great Navigator!","You've got a strong sense of world geography!"],50:["✅ Getting There!","Keep studying those continents!"],0:["😅 Lost At Sea!","Continents take practice — try again!"]};
+  const [title,msg]=msgs[tier];
+  const colors={100:"#7C3AED",75:"#58CC02",50:"#1CB0F6",0:"#FF4B4B"};
+  const emojis={100:"🏆",75:"🌟",50:"✅",0:"😅"};
+  const starsFilled=pct===100?3:pct>=50?2:1;
+  const stars=["⭐","⭐","⭐"].map((s,i)=>`<span style="opacity:${i<starsFilled?1:0.2};font-size:36px">${s}</span>`).join("");
+
+  return `<div class="result-wrap">
+    <div style="font-size:72px;margin-bottom:6px;animation:bounceIn .7s ease">${emojis[tier]}</div>
+    <div style="display:flex;gap:4px;margin-bottom:12px">${stars}</div>
+    <h2 class="result-title" style="color:${colors[tier]}">${title}</h2>
+    <p class="result-subtitle">What Continent? Complete! · ${msg}</p>
+
+    <div class="leaderboard-card">
+      <div style="font-size:13px;color:var(--ink-soft);font-weight:800;margin-bottom:8px">Your Score</div>
+      <div style="font-size:42px;font-weight:800;color:var(--ink);margin-bottom:6px;font-family:'Baloo 2',sans-serif">${score} / ${total}</div>
+      <div class="leaderboard-bar"><div class="leaderboard-fill" style="width:${pct}%;background:var(--gold)"></div></div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-gold" id="retryContinent">🌍 Play Again</button>
+      <button class="btn btn-secondary" id="backToHub">🕹️ More Games</button>
+      <button class="btn btn-secondary" id="backToPath">🗺️ Back to Atlas</button>
+    </div>
+  </div>`;
+}
+
+/* ================================================================
    EVENT BINDING
 ================================================================ */
 function bindEvents(){
@@ -1373,6 +1486,15 @@ function bindEvents(){
   on("openQuickHub","click",()=>{STATE.view="quickHub";render();});
   on("saveBtn","click",()=>saveState());
   on("resetBtn","click",()=>showResetModal());
+  document.querySelectorAll("[data-continent]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const id=btn.dataset.continent;
+      const idx=STATE.collapsedContinents.indexOf(id);
+      if(idx>-1) STATE.collapsedContinents.splice(idx,1);
+      else STATE.collapsedContinents.push(id);
+      render();
+    });
+  });
 
   /* LESSON */
   on("lessonBack","click",()=>{STATE.view="path";render();});
@@ -1380,9 +1502,11 @@ function bindEvents(){
   on("nextCard","click",()=>{STATE.cardIndex++;render();});
   on("startQuiz","click",()=>{
     STATE.quiz=buildDayQuiz(STATE.activeDay);
-    STATE.qIndex=0;STATE.selected=null;STATE.score=0;STATE.hearts=3;
+    STATE.qIndex=0;STATE.selected=null;STATE.score=0;
     STATE.view="quiz";render();
   });
+  const zoomBtn=$("zoomFlagBtn");
+  if(zoomBtn) zoomBtn.addEventListener("click",()=>showFlagZoom(zoomBtn.dataset.flag));
 
   /* QUIZ */
   on("quitQuiz","click",()=>{STATE.view="path";render();});
@@ -1393,7 +1517,6 @@ function bindEvents(){
       STATE.selected=ch;
       const correct=ch===STATE.quiz[STATE.qIndex].answer;
       if(correct){STATE.score++;launchConfetti(20);}
-      else{STATE.hearts=Math.max(0,STATE.hearts-1);}
       render();
     });
   });
@@ -1417,7 +1540,7 @@ function bindEvents(){
   /* RESULT */
   on("retryQuiz","click",()=>{
     STATE.quiz=buildDayQuiz(STATE.activeDay);
-    STATE.qIndex=0;STATE.selected=null;STATE.score=0;STATE.hearts=3;
+    STATE.qIndex=0;STATE.selected=null;STATE.score=0;
     STATE.view="quiz";render();
   });
   on("backToPath","click",()=>{STATE.view="path";STATE.activeDay=null;render();});
@@ -1458,9 +1581,17 @@ function bindEvents(){
     STATE.view="visual";
     render();
   });
+  on("playGame5","click",()=>{
+    STATE.continentQuiz=buildContinentQuiz();
+    STATE.continentQIndex=0;
+    STATE.continentSelected=null;
+    STATE.continentScore=0;
+    STATE.view="continent";
+    render();
+  });
 
   /* QUICK 5 */
-  on("quitQ5","click",()=>{STATE.view="path";render();});
+  on("quitQ5","click",()=>{STATE.view="quickHub";render();});
   document.querySelectorAll("[data-q5choice]").forEach(btn=>{
     btn.addEventListener("click",()=>{
       if(STATE.quick5Selected)return;
@@ -1486,7 +1617,7 @@ function bindEvents(){
   });
 
   /* LOOKALIKE FLAGS (Game 2) */
-  on("quitLookalike","click",()=>{STATE.view="path";render();});
+  on("quitLookalike","click",()=>{STATE.view="quickHub";render();});
   document.querySelectorAll("[data-lookalikechoice]").forEach(btn=>{
     btn.addEventListener("click",()=>{
       if(STATE.lookalikeSelected)return;
@@ -1512,7 +1643,7 @@ function bindEvents(){
   });
 
   /* TYPE IT OUT (Game 3) */
-  on("quitType","click",()=>{STATE.view="path";render();});
+  on("quitType","click",()=>{STATE.view="quickHub";render();});
   const typeInputEl=$("typeAnswerInput");
   if(typeInputEl){
     typeInputEl.addEventListener("input",e=>{STATE.typeInput=e.target.value;});
@@ -1545,7 +1676,7 @@ function bindEvents(){
   });
 
   /* SPOT THE FLAG (Game 4) */
-  on("quitVisual","click",()=>{STATE.view="path";render();});
+  on("quitVisual","click",()=>{STATE.view="quickHub";render();});
   document.querySelectorAll("[data-visualchoice]").forEach(btn=>{
     btn.addEventListener("click",()=>{
       if(STATE.visualSelected)return;
@@ -1568,6 +1699,32 @@ function bindEvents(){
     STATE.visualQuiz=buildVisualQuiz();
     STATE.visualQIndex=0;STATE.visualSelected=null;STATE.visualScore=0;
     STATE.view="visual";render();
+  });
+
+  /* WHAT CONTINENT? (Game 5) */
+  on("quitContinent","click",()=>{STATE.view="quickHub";render();});
+  document.querySelectorAll("[data-continentchoice]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      if(STATE.continentSelected)return;
+      const ch=btn.dataset.continentchoice;
+      STATE.continentSelected=ch;
+      const correct=ch===STATE.continentQuiz[STATE.continentQIndex].answer;
+      if(correct){STATE.continentScore++;launchConfetti(15);}
+      render();
+    });
+  });
+  on("nextContinent","click",()=>{
+    if(STATE.continentQIndex+1>=STATE.continentQuiz.length){
+      if(STATE.continentScore===STATE.continentQuiz.length)launchConfetti(80);
+      STATE.view="continentresult";render();
+    } else {
+      STATE.continentQIndex++;STATE.continentSelected=null;render();
+    }
+  });
+  on("retryContinent","click",()=>{
+    STATE.continentQuiz=buildContinentQuiz();
+    STATE.continentQIndex=0;STATE.continentSelected=null;STATE.continentScore=0;
+    STATE.view="continent";render();
   });
 }
 
