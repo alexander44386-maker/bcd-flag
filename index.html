@@ -152,6 +152,7 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 /* ── QUICK 5 BANNER ── */
 .quick5-banner{background:linear-gradient(135deg,var(--accent1),var(--accent2));border-radius:20px;padding:22px;margin-top:14px;text-align:center;color:#fff;position:relative;overflow:hidden;box-shadow:0 4px 0 rgba(0,0,0,0.15)}
 .quick5-banner::before{content:'⚡';position:absolute;top:10px;right:16px;font-size:46px;opacity:.18;line-height:1}
+.dashboard-banner::before{content:'📊'}
 .quick5-title{font-size:21px;font-weight:800;margin-bottom:4px;font-family:'Baloo 2',sans-serif}
 .quick5-subtitle{font-size:12.5px;opacity:.9;margin-bottom:16px;font-weight:700}
 .quick5-pips{display:flex;justify-content:center;gap:5px;margin-bottom:18px;flex-wrap:wrap}
@@ -160,6 +161,14 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 /* ── CONFETTI ── */
 .confetti-piece{position:fixed;width:10px;height:10px;border-radius:2px;pointer-events:none;z-index:9999;animation:confettiFall linear forwards}
 
+
+/* ── FLAG MATCH DASHBOARD ── */
+.dash-list{display:flex;flex-direction:column;gap:6px;padding:12px 2px 4px}
+.dash-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#fff;border:1.5px solid var(--line);border-radius:12px}
+.dash-flag{font-size:19px;flex-shrink:0}
+.dash-name{flex:1;font-size:13.5px;font-weight:700;color:var(--ink)}
+.dash-count{font-size:12px;font-weight:800;color:var(--accent1);background:rgba(124,58,237,0.1);border-radius:999px;padding:3px 11px;flex-shrink:0}
+.dash-count-zero{color:var(--red-text);background:var(--red-bg)}
 
 /* ── LEADERBOARD CARD ── */
 .leaderboard-card{width:100%;max-width:360px;background:#fff;border-radius:18px;border:2px solid var(--line);padding:18px;margin:14px 0}
@@ -513,6 +522,17 @@ const VISUAL_CLUES = [
   {clue:"Which flag has light blue stripes and a golden 'Sun of May'?",answer:"Argentina",distractors:["France","Nigeria","Jamaica"]},
   {clue:"Which flag shows a golden condor above a mountain?",answer:"Ecuador",distractors:["Peru","Colombia","Bolivia"]},
   {clue:"Which flag has just a single white star on plain red?",answer:"Vietnam",distractors:["China","North Korea","Turkey"]},
+  {clue:"Which flag is a solid light blue field with a single white star?",answer:"Somalia",distractors:["Greece","Israel","Argentina"]},
+  {clue:"Which flag is almost entirely dark green?",answer:"Saudi Arabia",distractors:["Turkey","Poland","Japan"]},
+  {clue:"Which flag is solid sky blue with a golden sun and eagle?",answer:"Kazakhstan",distractors:["Argentina","Botswana","Micronesia"]},
+  {clue:"Which flag is mostly light blue with a black-and-white stripe across it?",answer:"Botswana",distractors:["Kazakhstan","Argentina","Micronesia"]},
+  {clue:"Which flag is light blue with four white stars?",answer:"Micronesia",distractors:["Somalia","Palau","Nauru"]},
+  {clue:"Which flag is light blue with a Union Jack in the corner and no stars?",answer:"Fiji",distractors:["Australia","New Zealand","United Kingdom"]},
+  {clue:"Which flag is green, white, then orange vertical stripes (green on the left)?",answer:"Ireland",distractors:["Ivory Coast","Italy","Mexico"]},
+  {clue:"Which flag has green, yellow, and red horizontal stripes with a black star?",answer:"Ghana",distractors:["Senegal","Cameroon","Mali"]},
+  {clue:"Which flag is a red field with a green five-pointed star in the center?",answer:"Morocco",distractors:["Turkey","Vietnam","Somalia"]},
+  {clue:"Which flag has thick orange, white, and green vertical stripes with a navy wheel?",answer:"India",distractors:["Ireland","Ivory Coast","Nigeria"]},
+  {clue:"Which flag is mostly green with a white crescent moon and star?",answer:"Pakistan",distractors:["Turkey","Algeria","Tunisia"]},
 ];
 
 /* ================================================================
@@ -535,6 +555,11 @@ async function saveState(){
     unlockedDay: STATE.unlockedDay,
     completedDays: STATE.completedDays,
     streak: STATE.streak,
+    correctCounts: STATE.correctCounts,
+    collapsedContinents: STATE.collapsedContinents,
+    collapsedDashboard: STATE.collapsedDashboard,
+    quick5History: STATE.quick5History,
+    visualHistory: STATE.visualHistory,
   };
   // Always keep a local copy so the game still works offline.
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(toSave)); }catch(e){}
@@ -562,6 +587,11 @@ async function loadState(){
       STATE.unlockedDay = saved.unlockedDay ?? 1;
       STATE.completedDays = saved.completedDays ?? [];
       STATE.streak = saved.streak ?? 0;
+      STATE.correctCounts = saved.correctCounts ?? {};
+      STATE.collapsedContinents = saved.collapsedContinents ?? [];
+      STATE.collapsedDashboard = saved.collapsedDashboard ?? [];
+      STATE.quick5History = saved.quick5History ?? [];
+      STATE.visualHistory = saved.visualHistory ?? [];
       try{ localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); }catch(e){}
       return;
     }
@@ -575,6 +605,11 @@ async function loadState(){
     STATE.unlockedDay = saved.unlockedDay ?? 1;
     STATE.completedDays = saved.completedDays ?? [];
     STATE.streak = saved.streak ?? 0;
+    STATE.correctCounts = saved.correctCounts ?? {};
+    STATE.collapsedContinents = saved.collapsedContinents ?? [];
+    STATE.collapsedDashboard = saved.collapsedDashboard ?? [];
+    STATE.quick5History = saved.quick5History ?? [];
+    STATE.visualHistory = saved.visualHistory ?? [];
   } catch(e){}
 }
 
@@ -619,7 +654,10 @@ function showResetModal(){
     STATE.completedDays=[];
     STATE.streak=0;
     STATE.quick5History=[];
+    STATE.visualHistory=[];
     STATE.collapsedContinents=[];
+    STATE.collapsedDashboard=[];
+    STATE.correctCounts={};
     STATE.view="path";
     overlay.remove();
     showToast("🔄 Progress reset!");
@@ -643,6 +681,8 @@ let STATE = {
   selected: null,
   score: 0,
   collapsedContinents: [],
+  collapsedDashboard: [],
+  correctCounts: {},
   quick5Quiz: null,
   quick5QIndex: 0,
   quick5Selected: null,
@@ -661,6 +701,7 @@ let STATE = {
   visualQIndex: 0,
   visualSelected: null,
   visualScore: 0,
+  visualHistory: [],
   continentQuiz: null,
   continentQIndex: 0,
   continentSelected: null,
@@ -681,6 +722,21 @@ function shuffle(arr){
 
 function dayLookup(n){return DAYS.find(d=>d.day===n);}
 
+/* Weighted sample (no replacement) that favors countries with fewer
+   correct Flag Match answers — flags with 0 or few correct answers
+   are more likely to be picked. Uses the Efraimidis-Spirakis weighted
+   random sampling method. */
+function weightedTakeByLowCount(arr,n){
+  const keyed=arr.map(c=>{
+    const count=STATE.correctCounts[c.name]||0;
+    const weight=1/(1+count);
+    const key=Math.pow(Math.random(),1/weight);
+    return {c,key};
+  });
+  keyed.sort((a,b)=>b.key-a.key);
+  return keyed.slice(0,n).map(x=>x.c);
+}
+
 /* Picks distractors that are harder to eliminate: same-continent countries
    are pulled first (so choices can't be ruled out just by "wrong region"),
    falling back to any other country only if the region runs short. */
@@ -691,6 +747,30 @@ function pickHardDistractors(correct, pool, count){
   let picks=shuffle(sameContinent).slice(0,count);
   if(picks.length<count){
     picks=[...picks,...shuffle(elsewhere).slice(0,count-picks.length)];
+  }
+  return picks;
+}
+
+/* Picks the toughest possible distractors for Flag Match: known
+   commonly-confused "lookalike" flags first (e.g. Romania/Moldova),
+   then falls back to same-continent countries (via pickHardDistractors)
+   if the country has no lookalike group or it runs short. */
+function pickDistractorsWithLookalikes(correct, pool, count, excludeNames){
+  excludeNames = excludeNames || new Set();
+  const group=LOOKALIKE_GROUPS.find(g=>g.includes(correct.name));
+  let picks=[];
+  if(group){
+    const lookalikeCountries=group
+      .filter(n=>n!==correct.name&&!excludeNames.has(n))
+      .map(n=>ALL_COUNTRIES.find(x=>x.name===n))
+      .filter(Boolean);
+    picks=shuffle(lookalikeCountries).slice(0,count);
+  }
+  if(picks.length<count){
+    const usedNames=new Set([correct.name,...excludeNames,...picks.map(p=>p.name)]);
+    const remaining=count-picks.length;
+    const hardPicks=pickHardDistractors(correct, pool.filter(x=>!usedNames.has(x.name)), remaining);
+    picks=[...picks,...hardPicks];
   }
   return picks;
 }
@@ -726,25 +806,27 @@ function buildQuick5Quiz(){
 
   let pool;
   if(available.length>=8){
-    pool=shuffle(available).slice(0,8);
+    pool=weightedTakeByLowCount(available,8);
   } else {
     const need=8-available.length;
-    const orderedFallback=history
-      .map(name=>collected.find(c=>c.name===name))
-      .filter(Boolean);
-    pool=shuffle([...available, ...orderedFallback.slice(0,need)]);
+    const orderedFallback=weightedTakeByLowCount(
+      history.map(name=>collected.find(c=>c.name===name)).filter(Boolean),
+      need
+    );
+    pool=shuffle([...available, ...orderedFallback]);
   }
   pool=pool.slice(0,Math.min(8,pool.length));
+  pool=shuffle(pool);
 
   const usedNames=pool.map(c=>c.name);
   STATE.quick5History=[...history.filter(n=>!usedNames.includes(n)),...usedNames].slice(-24);
 
   return pool.map(c=>{
-    let wrong=pickHardDistractors(c,collected,3);
+    let wrong=pickDistractorsWithLookalikes(c,collected,3);
     if(wrong.length<3){
       const usedNames=new Set([c.name,...wrong.map(w=>w.name)]);
       const extraPool=ALL_COUNTRIES.filter(x=>!usedNames.has(x.name));
-      wrong=[...wrong,...pickHardDistractors(c,extraPool,3-wrong.length)];
+      wrong=[...wrong,...pickDistractorsWithLookalikes(c,extraPool,3-wrong.length,usedNames)];
     }
     return {type:"flag",flag:c.flag,question:"Which country does this flag belong to?",answer:c.name,choices:shuffle([c,...wrong]).map(x=>x.name),fact:c.fact,capital:c.capital,attraction:c.attraction,badge:"flag"};
   });
@@ -784,7 +866,30 @@ function buildVisualQuiz(){
   const collectedNames=new Set(collected.map(c=>c.name));
   const eligible=VISUAL_CLUES.filter(c=>collectedNames.has(c.answer));
   if(eligible.length<3) return [];
-  const chosen=shuffle(eligible).slice(0,5);
+  const desiredCount=Math.min(5,eligible.length);
+
+  // Avoid repeating clues used in the last game, falling back to the
+  // least-recently-used ones only if the eligible pool is too small
+  // to fill a full round without repeats.
+  const history=STATE.visualHistory||[];
+  const excluded=new Set(history);
+  const available=eligible.filter(c=>!excluded.has(c.clue));
+
+  let chosen;
+  if(available.length>=desiredCount){
+    chosen=shuffle(available).slice(0,desiredCount);
+  } else {
+    const need=desiredCount-available.length;
+    const orderedFallback=history
+      .map(clue=>eligible.find(c=>c.clue===clue))
+      .filter(Boolean);
+    chosen=shuffle([...available, ...orderedFallback.slice(0,need)]);
+  }
+  chosen=chosen.slice(0,desiredCount);
+
+  const usedClues=chosen.map(c=>c.clue);
+  STATE.visualHistory=[...history.filter(cl=>!usedClues.includes(cl)),...usedClues].slice(-40);
+
   return chosen.map(c=>{
     const answer=ALL_COUNTRIES.find(x=>x.name===c.answer);
     const distractors=c.distractors.map(n=>ALL_COUNTRIES.find(x=>x.name===n)).filter(Boolean);
@@ -838,6 +943,7 @@ function render(){
   const app=document.getElementById("app");
   switch(STATE.view){
     case "path":         app.innerHTML=renderPath(); break;
+    case "dashboard":    app.innerHTML=renderDashboardPage(); break;
     case "lesson":       app.innerHTML=renderLesson(); break;
     case "quiz":         app.innerHTML=renderQuiz(); break;
     case "result":       app.innerHTML=renderResult(); break;
@@ -921,13 +1027,67 @@ function renderPath(){
       ${(()=>{
         const count=getCollectedCountries().length;
         return `
-          <div class="quick5-subtitle">4 game modes · ${count} stamp${count===1?"":"s"} collected so far</div>
+          <div class="quick5-subtitle">5 game modes · ${count} stamp${count===1?"":"s"} collected so far</div>
           <div class="quick5-pips">
-            <div class="quick5-pip">🎯</div><div class="quick5-pip">👀</div><div class="quick5-pip">⌨️</div><div class="quick5-pip">🧩</div>
+            <div class="quick5-pip">🎯</div><div class="quick5-pip">👀</div><div class="quick5-pip">⌨️</div><div class="quick5-pip">🔍</div><div class="quick5-pip">🌍</div>
           </div>
           <button class="btn btn-gold" id="openQuickHub">⚡ Play Quick Quiz</button>`;
       })()}
     </div>
+
+    <div class="quick5-banner slide-up dashboard-banner" style="margin-top:18px">
+      <div class="quick5-title">📊 Dashboard</div>
+      ${(()=>{
+        const total=Object.values(STATE.correctCounts).reduce((s,n)=>s+n,0);
+        return `<div class="quick5-subtitle">🎯 Flag Match Stats · ${total} correct answer${total===1?"":"s"} tracked</div>
+          <button class="btn btn-blue" id="openDashboard">📊 View Dashboard</button>`;
+      })()}
+    </div>
+  </div>`;
+}
+
+/* ================================================================
+   DASHBOARD PAGE — all countries per continent, with how many times
+   each has been answered correctly in Flag Match
+================================================================ */
+function renderDashboardPage(){
+  const sections=CONTINENTS.map(cont=>{
+    const countries=ALL_COUNTRIES
+      .filter(c=>COUNTRY_CONTINENT[c.name]===cont.id)
+      .slice()
+      .sort((a,b)=>(STATE.correctCounts[a.name]||0)-(STATE.correctCounts[b.name]||0) || a.name.localeCompare(b.name));
+    const totalCorrect=countries.reduce((s,c)=>s+(STATE.correctCounts[c.name]||0),0);
+    const collapsed=STATE.collapsedDashboard.includes(cont.id);
+
+    const rows=countries.map(c=>{
+      const cnt=STATE.correctCounts[c.name]||0;
+      const low=cnt<=1;
+      return `<div class="dash-row">
+        <span class="dash-flag">${c.flag}</span>
+        <span class="dash-name">${c.name}</span>
+        <span class="dash-count${low?" dash-count-zero":""}">${cnt}✓</span>
+      </div>`;
+    }).join("");
+
+    return `<section>
+      <button type="button" class="chapter-header" data-dashcontinent="${cont.id}" style="--chap-color:${cont.color};width:100%;text-align:left">
+        <span class="chapter-dot"></span>
+        <h2 class="chapter-title">${cont.name}</h2>
+        <span class="chapter-sub">${totalCorrect} ✓ total</span>
+        <span style="color:#fff;font-size:13px;flex-shrink:0;transition:transform .2s ease;transform:rotate(${collapsed?"-90deg":"0deg"})">▼</span>
+      </button>
+      ${collapsed?"":`<div class="dash-list">${rows}</div>`}
+    </section>`;
+  }).join("");
+
+  return `<div class="path-wrap">
+    <div class="top-bar" style="margin-bottom:14px">
+      <button class="icon-btn" id="quitDashboard">◀</button>
+      <p style="flex:1;text-align:center;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:18px;margin:0">📊 Dashboard</p>
+      <div style="width:44px"></div>
+    </div>
+    <p class="lesson-eyebrow" style="margin-top:0">🎯 Flag Match Stats · how many times you've gotten each flag right</p>
+    <div class="continent-list">${sections}</div>
   </div>`;
 }
 
@@ -1484,6 +1644,8 @@ function bindEvents(){
     });
   });
   on("openQuickHub","click",()=>{STATE.view="quickHub";render();});
+  on("openDashboard","click",()=>{STATE.view="dashboard";render();});
+  on("quitDashboard","click",()=>{STATE.view="path";render();});
   on("saveBtn","click",()=>saveState());
   on("resetBtn","click",()=>showResetModal());
   document.querySelectorAll("[data-continent]").forEach(btn=>{
@@ -1492,6 +1654,15 @@ function bindEvents(){
       const idx=STATE.collapsedContinents.indexOf(id);
       if(idx>-1) STATE.collapsedContinents.splice(idx,1);
       else STATE.collapsedContinents.push(id);
+      render();
+    });
+  });
+  document.querySelectorAll("[data-dashcontinent]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const id=btn.dataset.dashcontinent;
+      const idx=STATE.collapsedDashboard.indexOf(id);
+      if(idx>-1) STATE.collapsedDashboard.splice(idx,1);
+      else STATE.collapsedDashboard.push(id);
       render();
     });
   });
@@ -1597,8 +1768,13 @@ function bindEvents(){
       if(STATE.quick5Selected)return;
       const ch=btn.dataset.q5choice;
       STATE.quick5Selected=ch;
-      const correct=ch===STATE.quick5Quiz[STATE.quick5QIndex].answer;
-      if(correct){STATE.quick5Score++;launchConfetti(15);}
+      const answer=STATE.quick5Quiz[STATE.quick5QIndex].answer;
+      const correct=ch===answer;
+      if(correct){
+        STATE.quick5Score++;
+        STATE.correctCounts[answer]=(STATE.correctCounts[answer]||0)+1;
+        launchConfetti(15);
+      }
       render();
     });
   });
