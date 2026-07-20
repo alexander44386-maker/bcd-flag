@@ -79,8 +79,8 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 .h1{font-size:clamp(24px,7vw,32px);font-weight:800;color:var(--ink);letter-spacing:-.01em}
 .header-badges{display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .streak-badge{display:flex;align-items:center;gap:6px;background:#fff;border:2px solid var(--line);box-shadow:0 3px 0 var(--line);border-radius:999px;padding:8px 14px;font-weight:800;font-size:16px;color:var(--ink);flex-shrink:0}
-.save-btn,.reset-btn{display:flex;align-items:center;justify-content:center;gap:5px;background:var(--accent1);border:2px solid var(--accent1-dark);box-shadow:0 3px 0 var(--accent1-dark);border-radius:999px;padding:7px 14px;font-weight:800;font-size:12px;color:#fff;flex-shrink:0;cursor:pointer;transition:transform .1s;min-width:74px;height:34px}
-.save-btn:active,.reset-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--accent1-dark)}
+.save-btn{display:flex;align-items:center;justify-content:center;gap:5px;background:var(--accent1);border:2px solid var(--accent1-dark);box-shadow:0 3px 0 var(--accent1-dark);border-radius:999px;padding:7px 14px;font-weight:800;font-size:12px;color:#fff;flex-shrink:0;cursor:pointer;transition:transform .1s;min-width:74px;height:34px}
+.save-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--accent1-dark)}
 .progress-track{position:relative;height:14px;background:var(--line);border-radius:999px;margin-bottom:8px;overflow:hidden}
 .progress-fill{position:absolute;top:0;left:0;height:100%;background:linear-gradient(90deg,var(--accent1),var(--accent2));border-radius:999px;transition:width .6s ease}
 .progress-label{font-size:12.5px;color:var(--ink-soft);font-weight:700;display:block;margin-bottom:18px}
@@ -138,6 +138,32 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 .feedback-fact{font-size:13.5px;line-height:1.5;color:var(--ink-soft);margin-bottom:14px;font-weight:600}
 .feedback-attraction{font-size:12.5px;font-weight:700;color:var(--accent1);background:rgba(124,58,237,0.08);border-radius:10px;padding:6px 10px;margin-bottom:8px;display:flex;align-items:center;gap:5px}
 
+/* ── LOOKALIKE FLAGS: DRAG & DROP MATCHING ── */
+.matchflags-grid{display:flex;flex-direction:column;gap:14px;margin-bottom:22px}
+.matchflag-slot{background:#fff;border:2.5px dashed var(--line);border-radius:18px;padding:14px 18px;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:18px;min-height:88px;transition:border-color .15s,background .15s,transform .12s;cursor:pointer}
+.matchflag-emoji{font-size:clamp(48px,14vw,64px);line-height:1;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.12));flex-shrink:0}
+.matchflag-label{font-size:18px;font-weight:800;color:var(--ink-soft);text-align:left;letter-spacing:.01em}
+.matchflag-slot.drag-over{border-style:solid;border-color:var(--accent1);background:rgba(124,58,237,0.07);transform:scale(1.02)}
+.matchflag-slot.filled{border-style:solid;border-color:var(--accent1);background:rgba(124,58,237,0.07)}
+.matchflag-slot.filled .matchflag-label{color:var(--accent1-dark)}
+.matchflag-slot.correct{border-style:solid;border-color:var(--green);background:var(--green-bg);cursor:default}
+.matchflag-slot.correct .matchflag-label{color:var(--green-text)}
+.matchflag-slot.wrong{border-style:solid;border-color:var(--red);background:var(--red-bg);cursor:default}
+.matchflag-slot.wrong .matchflag-label{color:var(--red-text)}
+.matchflag-slot.shake-wrong{animation:wobble .4s ease;border-color:var(--red);background:var(--red-bg)}
+.matchchips-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:150px}
+.matchchip{background:#fff;border:2px solid var(--line);box-shadow:0 4px 0 var(--line);border-radius:14px;padding:12px 16px;font-weight:700;font-size:14px;color:var(--ink);cursor:grab;user-select:none;transition:transform .1s,box-shadow .1s,opacity .15s}
+.matchchip.selected{border-color:var(--accent1);box-shadow:0 4px 0 var(--accent1-dark);background:rgba(124,58,237,0.07);color:var(--accent1-dark)}
+.matchchip-source-hidden{opacity:0.22}
+.matchchip-drag{box-shadow:0 10px 22px rgba(0,0,0,0.28) !important;transform:scale(1.06) rotate(-2deg);cursor:grabbing}
+@media(max-width:400px){
+  .matchflags-grid{gap:10px}
+  .matchflag-slot{min-height:76px;padding:10px 14px;gap:14px}
+  .matchflag-emoji{font-size:clamp(38px,15vw,50px)}
+  .matchflag-label{font-size:15px}
+  .matchchips-row{margin-bottom:160px}
+}
+
 /* ── RESULT VIEW ── */
 .result-wrap{padding:40px 22px 48px;max-width:480px;margin:0 auto;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center;flex:1;justify-content:center}
 .result-title{font-size:clamp(22px,6.5vw,28px);font-weight:800;color:var(--ink);margin-bottom:4px}
@@ -185,6 +211,34 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 .modal-body{font-size:14.5px;color:var(--ink-soft);line-height:1.6;margin-bottom:22px;font-weight:600}
 .modal-actions{display:flex;flex-direction:column;gap:10px}
 
+/* ── PLAYER SELECT — ALIENWARE-STYLE THEME ──
+   Dark, angular, neon-glow aesthetic using the app's own accent
+   colors (purple/pink/blue/gold) instead of a different palette.
+   Square tiles modeled after a tab-card / category-grid pattern:
+   gradient edge color, circular icon badge, radial sheen, hover lift. */
+@keyframes awPulseBorder{0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,0.22),0 6px 20px rgba(0,0,0,.35)}50%{box-shadow:0 0 0 1px rgba(255,255,255,0.42),0 6px 24px rgba(0,0,0,.4)}}
+@keyframes awCardIn{from{opacity:0;transform:translateY(16px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+.aw-wrap{min-height:100vh;width:100%;background:var(--bg-soft);position:relative;overflow:hidden;padding:8px 12px 24px;display:flex;flex-direction:column;align-items:center}
+.aw-content{position:relative;z-index:1;width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center}
+.aw-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.aw-alien{font-size:30px;line-height:1;flex-shrink:0}
+.aw-title{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:clamp(24px,7vw,32px);color:var(--ink);letter-spacing:-.01em;margin:0}
+.aw-bar{width:64px;height:3px;background:linear-gradient(90deg,var(--accent1),var(--accent2));border-radius:2px;margin:8px 0 6px}
+.aw-signature{font-family:'Dancing Script','Brush Script MT',cursive;font-size:16px;color:var(--ink-soft);letter-spacing:.04em;margin-bottom:20px;opacity:0.85;font-style:italic}
+.aw-eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;font-weight:800;text-align:center}
+.aw-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;width:100%}
+.aw-card{position:relative;aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px 10px;background:var(--card);border:2.5px solid var(--edge,var(--accent1));border-radius:20px;box-shadow:0 4px 0 var(--edge-dark,var(--accent1-dark));transition:transform .12s ease,box-shadow .12s ease;cursor:pointer;color:var(--ink);animation:awCardIn .4s cubic-bezier(.22,1,.36,1) both}
+.aw-card:active{transform:translateY(3px);box-shadow:0 1px 0 var(--edge-dark,var(--accent1-dark))}
+.aw-avatar{width:84px;height:84px;border-radius:50%;background:var(--edge,var(--accent1));border:2px solid var(--edge-dark,var(--accent1-dark));box-shadow:none;display:flex;align-items:center;justify-content:center;font-size:44px;flex-shrink:0}
+.aw-name{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;letter-spacing:.05em;color:var(--ink);text-transform:uppercase;text-align:center}
+@media(max-width:400px){
+  .aw-wrap{padding:14px 14px 36px}
+  .aw-grid{gap:10px}
+  .aw-card{border-radius:16px;padding:12px 8px}
+  .aw-avatar{width:68px;height:68px;font-size:34px}
+  .aw-name{font-size:17px}
+}
+
 @media(max-width:400px){
   .path-wrap{padding:12px 8px 20px}
   .day-path{gap:10px 4px}
@@ -194,7 +248,7 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
   .chapter-header{padding:10px 12px}
   .chapter-title{font-size:15px}
   .h1{font-size:22px}
-  .save-btn,.reset-btn{padding:6px 10px;font-size:11px}
+  .save-btn{padding:6px 10px;font-size:11px}
   .quick5-banner{padding:16px 14px}
   .quick5-title{font-size:17px}
   .stamp-card{padding:20px 14px}
@@ -215,7 +269,7 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 @media(max-width:360px){
   .header{gap:6px}
   .header-badges{gap:4px}
-  .save-btn,.reset-btn{padding:5px 9px;font-size:10.5px}
+  .save-btn{padding:5px 9px;font-size:10.5px}
   .h1{font-size:20px}
   .eyebrow{font-size:10px}
   .choices-grid{grid-template-columns:1fr 1fr;gap:7px}
@@ -482,6 +536,105 @@ const ALL_COUNTRIES = Array.from(
 const COUNTRY_CONTINENT = {};
 DAYS.forEach(d=>{ d.countries.forEach(c=>{ COUNTRY_CONTINENT[c.name]=d.continent; }); });
 
+/* ================================================================
+   PLAYER PROFILES
+   Different players get different day-paths and separate saves:
+   - BREN keeps the original continent-grouped path and inherits
+     the pre-existing save data.
+   - GIANN gets the same continent-grouped format, but starts with
+     a completely fresh (empty) save.
+   - GEORGE and CHARLIE get a path re-ordered by flag popularity
+     (most recognizable flags first, 5 per day, continents mixed
+     freely), each starting fresh with their own save.
+================================================================ */
+
+/* Most-to-least globally recognizable flags. Used to build the
+   popularity-ordered path for George & Charlie. */
+const POPULARITY_ORDER = [
+  "United States","United Kingdom","France","Japan","Philippines","Germany","Canada","Italy","Brazil","China","Spain",
+  "Russia","Australia","Mexico","India","South Korea","Switzerland","Argentina","South Africa","Egypt","Turkey",
+  "Netherlands","Sweden","Norway","Greece","Portugal","Ireland","Saudi Arabia","United Arab Emirates","Israel","New Zealand",
+  "Jamaica","Cuba","Indonesia","Thailand","Vietnam","Singapore","Malaysia","Poland","Ukraine",
+  "Belgium","Luxembourg","Austria","Denmark","Finland","Colombia","Chile","Peru","Venezuela","Nigeria",
+  "Kenya","Morocco","Pakistan","Bangladesh","Iran","North Korea","Cambodia","Myanmar","Nepal","Sri Lanka",
+  "Ecuador","Bolivia","Uruguay","Paraguay","Panama","Costa Rica","Guatemala","Belize","Honduras","El Salvador",
+  "Nicaragua","Dominican Republic","Haiti","Trinidad and Tobago","Bahamas","Barbados","Antigua and Barbuda","Guyana","Suriname","Qatar",
+  "Kuwait","Jordan","Lebanon","Libya","Tunisia","Algeria","Ethiopia","Ghana","Tanzania","Senegal",
+  "Ivory Coast","Cameroon","Zimbabwe","Zambia","Namibia","Botswana","Madagascar","Rwanda","Mongolia","Kazakhstan",
+  "Uzbekistan","Kyrgyzstan","Turkmenistan","Afghanistan","Oman","Brunei","Laos","Fiji","Papua New Guinea","Samoa",
+  "Tonga","Vanuatu","Solomon Islands","Georgia","Armenia","Belarus","Moldova","Romania","Bulgaria","Serbia",
+  "Croatia","Slovenia","Slovakia","Czechia","Hungary","Lithuania","Latvia","Estonia","Malta","Cyprus",
+  "San Marino","Bosnia","Albania","Guinea","Mali","Togo","Sierra Leone","Liberia","Benin","DR Congo",
+  "Somalia","Angola","Mozambique","Nauru","Palau","Micronesia","Marshall Islands","Kiribati","Tuvalu","Niue",
+];
+
+/* Build a 30-day path (5 flags/day) ordered purely by popularity,
+   ignoring continent boundaries entirely. */
+const POPULARITY_DAYS = (()=>{
+  const byName={}; ALL_COUNTRIES.forEach(c=>{ byName[c.name]=c; });
+  const ordered=POPULARITY_ORDER.map(n=>byName[n]).filter(Boolean);
+  // In case any country was missing from POPULARITY_ORDER, tack it on the end.
+  const seen=new Set(ordered.map(c=>c.name));
+  ALL_COUNTRIES.forEach(c=>{ if(!seen.has(c.name)){ ordered.push(c); seen.add(c.name); } });
+
+  const days=[];
+  for(let i=0;i<ordered.length;i+=5){
+    const chunk=ordered.slice(i,i+5);
+    if(!chunk.length) continue;
+    const dayNum=days.length+1;
+    days.push({day:dayNum,continent:"popular",title:`Top ${i+1}–${i+chunk.length}`,countries:chunk});
+  }
+  return days;
+})();
+
+/* George & Charlie's 30-day popularity path is split into 5 chapters
+   ("batches") of 6 days each — Flags Batch 1 through Flags Batch 5 —
+   so the path view reads as five manageable chunks instead of one
+   long list. */
+const POPULARITY_BATCH_COLORS = [
+  {color:"#1CB0F6",colorDark:"#0A91D6"},
+  {color:"#7C3AED",colorDark:"#5B21B6"},
+  {color:"#FF9600",colorDark:"#E07F00"},
+  {color:"#58CC02",colorDark:"#4BA000"},
+  {color:"#EC4899",colorDark:"#BE185D"},
+];
+const POPULARITY_CONTINENTS = (()=>{
+  const DAYS_PER_BATCH=6;
+  const batches=[];
+  for(let i=0;i<POPULARITY_DAYS.length;i+=DAYS_PER_BATCH){
+    const chunk=POPULARITY_DAYS.slice(i,i+DAYS_PER_BATCH);
+    if(!chunk.length) continue;
+    const batchNum=batches.length+1;
+    const colors=POPULARITY_BATCH_COLORS[(batchNum-1)%POPULARITY_BATCH_COLORS.length];
+    batches.push({id:`batch${batchNum}`,name:`🚩 Flags Batch ${batchNum}`,color:colors.color,colorDark:colors.colorDark,days:chunk.map(d=>d.day)});
+  }
+  return batches;
+})();
+
+/* ── Player profile definitions ──
+   Each has its own edge/edge-dark color pair (drawn from the app's
+   existing accent palette) used to tint its square tile. */
+const PROFILES = [
+  {id:"bren",   label:"BREN",   emoji:"🧑",edge:"var(--accent1)",edgeDark:"var(--accent1-dark)"},
+  {id:"george", label:"GEORGE", emoji:"🧑",edge:"var(--blue)",   edgeDark:"var(--blue-dark)"},
+  {id:"charlie",label:"CHARLIE",emoji:"🧑",edge:"var(--gold)",   edgeDark:"var(--gold-dark)"},
+  {id:"giann",  label:"GIANN",  emoji:"🧑",edge:"var(--accent2)",edgeDark:"var(--accent2-dark)"},
+];
+
+/* Which day-path & continent-chapter data each profile uses. */
+function pathDataFor(profileId){
+  if(profileId==="george"||profileId==="charlie"){
+    return {days:POPULARITY_DAYS, continents:POPULARITY_CONTINENTS};
+  }
+  return {days:DAYS, continents:CONTINENTS};
+}
+
+/* Active path data for whichever profile is currently signed in.
+   Defaults to the original continent-grouped path until a profile
+   is chosen. */
+let ACTIVE_DAYS = DAYS;
+let ACTIVE_CONTINENTS = CONTINENTS;
+
 /* ── Commonly-confused "lookalike" flag groups (for Game 2) ── */
 const LOOKALIKE_GROUPS = [
   ["Indonesia","Poland"],
@@ -492,7 +645,9 @@ const LOOKALIKE_GROUPS = [
   ["Australia","New Zealand"],
   ["Slovakia","Slovenia","Russia"],
   ["Norway","Sweden","Finland","Denmark"],
-  ["Mali","Guinea"],
+  ["Mali","Guinea","Senegal"],
+  ["Belgium","Germany"],
+  ["Romania","Armenia"],
 ];
 
 /* ── Visual clues for "Spot the Flag" (Game 4) ──
@@ -541,16 +696,27 @@ const VISUAL_CLUES = [
    across every device that opens this site (no accounts — one
    global save). localStorage is kept as an offline fallback only.
 ================================================================ */
-const SAVE_KEY = "flagatlas_save_v1";
+const SAVE_KEY_BASE = "flagatlas_save_v1";
 
 /* ⚠️ REPLACE this with YOUR Firebase Realtime Database URL.
    It looks like: https://your-project-id-default-rtdb.firebaseio.com
    See the README for the 5-minute setup steps. */
 const FIREBASE_DB_URL = "https://flag-atlas-6e9b2-default-rtdb.firebaseio.com/";
 
-const CLOUD_SAVE_URL = `${FIREBASE_DB_URL}/save.json`;
+/* BREN keeps the original save slot (so existing progress carries
+   over). Every other profile gets its own separate slot. */
+function saveKeyFor(profileId){
+  return profileId==="bren" ? SAVE_KEY_BASE : `${SAVE_KEY_BASE}_${profileId}`;
+}
+function cloudSaveUrlFor(profileId){
+  const slot = profileId==="bren" ? "save" : `save_${profileId}`;
+  const base = FIREBASE_DB_URL.replace(/\/+$/,""); // strip trailing slash(es) to avoid a double-slash URL
+  return `${base}/${slot}.json`;
+}
 
 async function saveState(){
+  const SAVE_KEY = saveKeyFor(STATE.profile);
+  const CLOUD_SAVE_URL = cloudSaveUrlFor(STATE.profile);
   const toSave={
     unlockedDay: STATE.unlockedDay,
     completedDays: STATE.completedDays,
@@ -560,6 +726,8 @@ async function saveState(){
     collapsedDashboard: STATE.collapsedDashboard,
     quick5History: STATE.quick5History,
     visualHistory: STATE.visualHistory,
+    typeHistory: STATE.typeHistory,
+    continentHistory: STATE.continentHistory,
   };
   // Always keep a local copy so the game still works offline.
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(toSave)); }catch(e){}
@@ -570,14 +738,33 @@ async function saveState(){
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(toSave),
     });
-    if(!res.ok) throw new Error("bad response");
+    if(!res.ok){
+      const body = await res.text().catch(()=> "");
+      throw new Error(`bad response: ${res.status} ${res.statusText} ${body}`);
+    }
     showToast("✅ Progress saved to the cloud!");
   } catch(e){
+    console.error("Cloud save failed:", CLOUD_SAVE_URL, e);
     showToast("⚠️ Saved on this device only (offline)");
   }
 }
 
-async function loadState(){
+async function loadState(profileId){
+  const SAVE_KEY = saveKeyFor(profileId);
+  const CLOUD_SAVE_URL = cloudSaveUrlFor(profileId);
+  // Reset in-memory state first so switching profiles never leaks
+  // progress from whoever played before.
+  STATE.unlockedDay=1;
+  STATE.completedDays=[];
+  STATE.streak=0;
+  STATE.correctCounts={};
+  STATE.collapsedContinents=[];
+  STATE.collapsedDashboard=[];
+  STATE.quick5History=[];
+  STATE.visualHistory=[];
+  STATE.typeHistory=[];
+  STATE.continentHistory=[];
+
   // Try the cloud save first so progress shows up on any device.
   try{
     const res = await fetch(CLOUD_SAVE_URL);
@@ -592,11 +779,14 @@ async function loadState(){
       STATE.collapsedDashboard = saved.collapsedDashboard ?? [];
       STATE.quick5History = saved.quick5History ?? [];
       STATE.visualHistory = saved.visualHistory ?? [];
+      STATE.typeHistory = saved.typeHistory ?? [];
+      STATE.continentHistory = saved.continentHistory ?? [];
       try{ localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); }catch(e){}
       return;
     }
   } catch(e){
     // Cloud unreachable (offline, or FIREBASE_DB_URL not set yet) — fall back to local copy.
+    console.error("Cloud load failed:", CLOUD_SAVE_URL, e);
   }
   try{
     const raw=localStorage.getItem(SAVE_KEY);
@@ -610,6 +800,8 @@ async function loadState(){
     STATE.collapsedDashboard = saved.collapsedDashboard ?? [];
     STATE.quick5History = saved.quick5History ?? [];
     STATE.visualHistory = saved.visualHistory ?? [];
+    STATE.typeHistory = saved.typeHistory ?? [];
+    STATE.continentHistory = saved.continentHistory ?? [];
   } catch(e){}
 }
 
@@ -633,47 +825,49 @@ function showToast(msg){
   setTimeout(()=>el.remove(),2500);
 }
 
-function showResetModal(){
+function showDevPasswordModal(){
   const overlay=document.createElement("div");
   overlay.className="modal-overlay";
   overlay.innerHTML=`<div class="modal-box">
-    <div class="modal-title">🔄 Reset Progress?</div>
-    <div class="modal-body">This will erase all your progress, stamps, streak, and saved data. This cannot be undone!</div>
+    <div class="modal-title">🛠️ Developer Mode</div>
+    <div class="modal-body">Enter the password to unlock developer mode.</div>
+    <input type="password" id="devPasswordInput" autocomplete="off" placeholder="Password"
+      style="width:100%;padding:13px 14px;border-radius:14px;border:2px solid var(--line);font-size:15px;font-family:inherit;font-weight:700;color:var(--ink);background:#fff;margin-bottom:16px;text-align:center"/>
     <div class="modal-actions">
-      <button class="btn btn-red" id="confirmReset">🗑️ Yes, Reset Everything</button>
-      <button class="btn btn-secondary" id="cancelReset">↩ Keep My Progress</button>
+      <button class="btn btn-primary" id="confirmDevPassword">🔓 Unlock</button>
+      <button class="btn btn-secondary" id="cancelDevPassword">✕ Cancel</button>
     </div>
   </div>`;
   document.body.appendChild(overlay);
-  document.getElementById("confirmReset").onclick=async()=>{
-    localStorage.removeItem(SAVE_KEY);
-    try{
-      await fetch(CLOUD_SAVE_URL, { method:"DELETE" });
-    } catch(e){ /* offline — local reset still applies */ }
-    STATE.unlockedDay=1;
-    STATE.completedDays=[];
-    STATE.streak=0;
-    STATE.quick5History=[];
-    STATE.visualHistory=[];
-    STATE.collapsedContinents=[];
-    STATE.collapsedDashboard=[];
-    STATE.correctCounts={};
-    STATE.view="path";
-    overlay.remove();
-    showToast("🔄 Progress reset!");
-    render();
-  };
-  document.getElementById("cancelReset").onclick=()=>overlay.remove();
+  const input=document.getElementById("devPasswordInput");
+  input.focus();
+  function trySubmit(){
+    if(input.value==="bcd1"){
+      STATE.devMode=true;
+      try{ localStorage.setItem("flagAtlasDevUnlocked","1"); }catch(e){}
+      overlay.remove();
+      showToast("🛠️ Developer mode unlocked!");
+      render();
+    } else {
+      showToast("❌ Wrong password");
+      input.value="";
+      input.focus();
+    }
+  }
+  document.getElementById("confirmDevPassword").onclick=trySubmit;
+  input.addEventListener("keydown",e=>{ if(e.key==="Enter") trySubmit(); });
+  document.getElementById("cancelDevPassword").onclick=()=>overlay.remove();
 }
 
 /* ================================================================
    STATE
 ================================================================ */
 let STATE = {
+  profile: null,
   unlockedDay: 1,
   completedDays: [],
   streak: 0,
-  view: "path",
+  view: "profileSelect",
   activeDay: null,
   cardIndex: 0,
   quiz: null,
@@ -683,6 +877,7 @@ let STATE = {
   collapsedContinents: [],
   collapsedDashboard: [],
   correctCounts: {},
+  devMode: false,
   quick5Quiz: null,
   quick5QIndex: 0,
   quick5Selected: null,
@@ -690,13 +885,17 @@ let STATE = {
   quick5History: [],
   lookalikeQuiz: null,
   lookalikeQIndex: 0,
-  lookalikeSelected: null,
+  lookalikeMatched: {},
+  lookalikePlaced: {},
+  lookalikeSubmitted: false,
   lookalikeScore: 0,
+  lookalikeTotal: 0,
   typeQuiz: null,
   typeQIndex: 0,
   typeInput: "",
   typeSubmitted: false,
   typeScore: 0,
+  typeHistory: [],
   visualQuiz: null,
   visualQIndex: 0,
   visualSelected: null,
@@ -706,6 +905,7 @@ let STATE = {
   continentQIndex: 0,
   continentSelected: null,
   continentScore: 0,
+  continentHistory: [],
 };
 
 /* ================================================================
@@ -720,15 +920,16 @@ function shuffle(arr){
   return a;
 }
 
-function dayLookup(n){return DAYS.find(d=>d.day===n);}
+function dayLookup(n){return ACTIVE_DAYS.find(d=>d.day===n);}
 
 /* Weighted sample (no replacement) that favors countries with fewer
    correct Flag Match answers — flags with 0 or few correct answers
    are more likely to be picked. Uses the Efraimidis-Spirakis weighted
    random sampling method. */
-function weightedTakeByLowCount(arr,n){
+function weightedTakeByLowCount(arr,n,nameFn){
+  nameFn = nameFn || (c=>c.name);
   const keyed=arr.map(c=>{
-    const count=STATE.correctCounts[c.name]||0;
+    const count=STATE.correctCounts[nameFn(c)]||0;
     const weight=1/(1+count);
     const key=Math.pow(Math.random(),1/weight);
     return {c,key};
@@ -786,16 +987,23 @@ function buildDayQuiz(dayData){
 function getCollectedCountries(){
   return Array.from(
     new Map(
-      DAYS.filter(d=>STATE.completedDays.includes(d.day))
+      ACTIVE_DAYS.filter(d=>STATE.completedDays.includes(d.day))
           .flatMap(d=>d.countries)
           .map(c=>[c.name,c])
     ).values()
   );
 }
 
+/* Practice quiz (Flag Match) size: George, Charlie & Giann get a
+   shorter 5-flag round; everyone else keeps the original 8. */
+function quick5QuizSize(){
+  return (STATE.profile==="george"||STATE.profile==="charlie"||STATE.profile==="giann") ? 5 : 8;
+}
+
 function buildQuick5Quiz(){
   const collected=getCollectedCountries();
   if(collected.length<4) return [];
+  const SIZE=quick5QuizSize();
 
   // Avoid repeating flags used in the last 3 rounds (up to 24 flags), falling
   // back to the least-recently-used ones only if the collected pool is too
@@ -805,21 +1013,21 @@ function buildQuick5Quiz(){
   const available=collected.filter(c=>!excluded.has(c.name));
 
   let pool;
-  if(available.length>=8){
-    pool=weightedTakeByLowCount(available,8);
+  if(available.length>=SIZE){
+    pool=weightedTakeByLowCount(available,SIZE);
   } else {
-    const need=8-available.length;
+    const need=SIZE-available.length;
     const orderedFallback=weightedTakeByLowCount(
       history.map(name=>collected.find(c=>c.name===name)).filter(Boolean),
       need
     );
     pool=shuffle([...available, ...orderedFallback]);
   }
-  pool=pool.slice(0,Math.min(8,pool.length));
+  pool=pool.slice(0,Math.min(SIZE,pool.length));
   pool=shuffle(pool);
 
   const usedNames=pool.map(c=>c.name);
-  STATE.quick5History=[...history.filter(n=>!usedNames.includes(n)),...usedNames].slice(-24);
+  STATE.quick5History=[...history.filter(n=>!usedNames.includes(n)),...usedNames].slice(-(SIZE*2));
 
   return pool.map(c=>{
     let wrong=pickDistractorsWithLookalikes(c,collected,3);
@@ -832,32 +1040,69 @@ function buildQuick5Quiz(){
   });
 }
 
+/* Builds drag-and-drop matching rounds: each round is a group of
+   commonly-confused flags (2-4 of them) shown together, and the
+   player drags each country name chip onto its matching flag. */
 function buildLookalikeQuiz(){
   const collected=getCollectedCountries();
   const collectedNames=new Set(collected.map(c=>c.name));
-  const eligible=LOOKALIKE_GROUPS.filter(g=>g.some(n=>collectedNames.has(n)));
+  const eligible=LOOKALIKE_GROUPS
+    .map(g=>g.filter(n=>ALL_COUNTRIES.some(c=>c.name===n)))
+    .filter(g=>g.length>=2&&g.some(n=>collectedNames.has(n)));
   if(eligible.length<3) return [];
   const chosenGroups=shuffle(eligible).slice(0,5);
   return chosenGroups.map(group=>{
-    const groupCountries=group.map(n=>ALL_COUNTRIES.find(c=>c.name===n)).filter(Boolean);
-    const collectedInGroup=groupCountries.filter(c=>collectedNames.has(c.name));
-    const target=shuffle(collectedInGroup.length?collectedInGroup:groupCountries)[0];
-    let choices=[...groupCountries];
-    if(choices.length<4){
-      const extras=shuffle(ALL_COUNTRIES.filter(x=>!group.includes(x.name)));
-      choices=[...choices,...extras.slice(0,4-choices.length)];
-    }
-    choices=shuffle(choices).slice(0,4);
-    if(!choices.find(c=>c.name===target.name)){ choices[0]=target; }
-    choices=shuffle(choices);
-    return {flag:target.flag,answer:target.name,fact:target.fact,capital:target.capital,attraction:target.attraction,choices:choices.map(x=>x.name)};
+    const groupCountries=shuffle(group.map(n=>ALL_COUNTRIES.find(c=>c.name===n)).filter(Boolean));
+    const countries=groupCountries.map(c=>({name:c.name,flag:c.flag,fact:c.fact,capital:c.capital,attraction:c.attraction}));
+    return {
+      countries,
+      flagOrder: shuffle(countries.map(c=>c.name)),
+      chipOrder: shuffle(countries.map(c=>c.name)),
+    };
   });
+}
+
+/* Sets up a fresh Lookalike Flags round-set and enters the game. */
+function startLookalikeQuiz(){
+  STATE.lookalikeQuiz=buildLookalikeQuiz();
+  STATE.lookalikeTotal=STATE.lookalikeQuiz.reduce((sum,r)=>sum+r.countries.length,0);
+  STATE.lookalikeQIndex=0;
+  STATE.lookalikeMatched={};
+  STATE.lookalikePlaced={};
+  STATE.lookalikeSubmitted=false;
+  STATE.lookalikeScore=0;
+  STATE.view="lookalike";
+  render();
 }
 
 function buildTypeQuiz(){
   const collected=getCollectedCountries();
   if(collected.length<4) return [];
-  const pool=shuffle([...collected]).slice(0,5);
+  const SIZE=Math.min(5,collected.length);
+
+  // Favor flags with the fewest correct answers, and avoid repeating
+  // flags used in the last 2 rounds unless the pool is too small.
+  const history=STATE.typeHistory||[];
+  const excluded=new Set(history);
+  const available=collected.filter(c=>!excluded.has(c.name));
+
+  let pool;
+  if(available.length>=SIZE){
+    pool=weightedTakeByLowCount(available,SIZE);
+  } else {
+    const need=SIZE-available.length;
+    const orderedFallback=weightedTakeByLowCount(
+      history.map(name=>collected.find(c=>c.name===name)).filter(Boolean),
+      need
+    );
+    pool=shuffle([...available, ...orderedFallback]);
+  }
+  pool=pool.slice(0,Math.min(SIZE,pool.length));
+  pool=shuffle(pool);
+
+  const usedNames=pool.map(c=>c.name);
+  STATE.typeHistory=[...history.filter(n=>!usedNames.includes(n)),...usedNames].slice(-(SIZE*2));
+
   return pool.map(c=>({flag:c.flag,answer:c.name,fact:c.fact,capital:c.capital,attraction:c.attraction}));
 }
 
@@ -877,18 +1122,17 @@ function buildVisualQuiz(){
 
   let chosen;
   if(available.length>=desiredCount){
-    chosen=shuffle(available).slice(0,desiredCount);
+    chosen=weightedTakeByLowCount(available,desiredCount,c=>c.answer);
   } else {
     const need=desiredCount-available.length;
-    const orderedFallback=history
-      .map(clue=>eligible.find(c=>c.clue===clue))
-      .filter(Boolean);
-    chosen=shuffle([...available, ...orderedFallback.slice(0,need)]);
+    const fallbackPool=history.map(clue=>eligible.find(c=>c.clue===clue)).filter(Boolean);
+    const orderedFallback=weightedTakeByLowCount(fallbackPool,need,c=>c.answer);
+    chosen=[...available, ...orderedFallback];
   }
-  chosen=chosen.slice(0,desiredCount);
+  chosen=shuffle(chosen).slice(0,desiredCount);
 
   const usedClues=chosen.map(c=>c.clue);
-  STATE.visualHistory=[...history.filter(cl=>!usedClues.includes(cl)),...usedClues].slice(-40);
+  STATE.visualHistory=[...history.filter(cl=>!usedClues.includes(cl)),...usedClues].slice(-(desiredCount*2));
 
   return chosen.map(c=>{
     const answer=ALL_COUNTRIES.find(x=>x.name===c.answer);
@@ -901,8 +1145,31 @@ function buildVisualQuiz(){
 function buildContinentQuiz(){
   const collected=getCollectedCountries();
   if(collected.length<4) return [];
-  const count=Math.min(6,collected.length);
-  const pool=shuffle([...collected]).slice(0,count);
+  const SIZE=Math.min(6,collected.length);
+
+  // Favor flags with the fewest correct answers, and avoid repeating
+  // flags used in the last 2 rounds unless the pool is too small.
+  const history=STATE.continentHistory||[];
+  const excluded=new Set(history);
+  const available=collected.filter(c=>!excluded.has(c.name));
+
+  let pool;
+  if(available.length>=SIZE){
+    pool=weightedTakeByLowCount(available,SIZE);
+  } else {
+    const need=SIZE-available.length;
+    const orderedFallback=weightedTakeByLowCount(
+      history.map(name=>collected.find(c=>c.name===name)).filter(Boolean),
+      need
+    );
+    pool=shuffle([...available, ...orderedFallback]);
+  }
+  pool=pool.slice(0,Math.min(SIZE,pool.length));
+  pool=shuffle(pool);
+
+  const usedNames=pool.map(c=>c.name);
+  STATE.continentHistory=[...history.filter(n=>!usedNames.includes(n)),...usedNames].slice(-(SIZE*2));
+
   return pool.map(c=>{
     const contId=COUNTRY_CONTINENT[c.name];
     const answer=CONTINENTS.find(x=>x.id===contId).name;
@@ -942,6 +1209,7 @@ function launchConfetti(count=40){
 function render(){
   const app=document.getElementById("app");
   switch(STATE.view){
+    case "profileSelect": app.innerHTML=renderProfileSelect(); break;
     case "path":         app.innerHTML=renderPath(); break;
     case "dashboard":    app.innerHTML=renderDashboardPage(); break;
     case "lesson":       app.innerHTML=renderLesson(); break;
@@ -964,15 +1232,45 @@ function render(){
 }
 
 /* ================================================================
+   PROFILE SELECT — "Who's playing?"
+================================================================ */
+function renderProfileSelect(){
+  const cards=PROFILES.map((p,i)=>{
+    return `<button type="button" class="aw-card" style="--edge:${p.edge};--edge-dark:${p.edgeDark};animation-delay:${(i*0.07).toFixed(2)}s,0s" data-profile="${p.id}">
+      <span class="aw-avatar">${p.emoji}</span>
+      <span class="aw-name">${p.label}</span>
+    </button>`;
+  }).join("");
+
+  return `<div class="aw-wrap">
+    <div class="aw-content">
+      <div class="aw-logo-row">
+        <span class="aw-alien">🌍</span>
+        <h1 class="aw-title">Flag Atlas</h1>
+      </div>
+      <div class="aw-bar"></div>
+      <p class="aw-signature">by <span id="devModeTrigger" style="color:var(--blue);cursor:pointer">BCD</span></p>
+      <p class="aw-eyebrow">⚡ Select Player</p>
+      <div class="aw-grid">${cards}</div>
+      <button type="button" class="aw-card" id="saveBtn" ${STATE.profile?"":"disabled"}
+        style="--edge:var(--red);--edge-dark:var(--red-dark);aspect-ratio:auto;flex-direction:row;justify-content:center;gap:8px;padding:8px 10px;margin-top:36px;width:50%;${STATE.profile?"":"opacity:.4;pointer-events:none"}">
+        <span class="aw-avatar" style="width:24px;height:24px;font-size:13px">💾</span>
+        <span class="aw-name" style="font-size:12px">Save</span>
+      </button>
+    </div>
+  </div>`;
+}
+
+/* ================================================================
    PATH VIEW
 ================================================================ */
 function renderPath(){
   const pct=Math.min(100,((STATE.unlockedDay-1)/TOTAL_DAYS)*100);
 
-  const continentSections=CONTINENTS.map(cont=>{
+  const continentSections=ACTIVE_CONTINENTS.map(cont=>{
     const days=cont.days.map(n=>dayLookup(n)).filter(Boolean);
     const nodes=days.map((d,i)=>{
-      const locked=d.day>STATE.unlockedDay;
+      const locked=d.day>STATE.unlockedDay&&!STATE.devMode;
       const done=STATE.completedDays.includes(d.day);
       const current=d.day===STATE.unlockedDay&&!done;
       const bg=done?cont.color:current?"#fff":locked?"#EEEEEE":"#fff";
@@ -1004,16 +1302,15 @@ function renderPath(){
   }).join("");
 
   return `<div class="path-wrap">
+    <div class="header-badges" style="justify-content:flex-end;margin-bottom:14px">
+      <button class="save-btn" id="switchPlayerBtn">🔀 Switch</button>
+    </div>
     <header class="header">
       <div>
         <h1 class="h1">🌍 Flag Atlas</h1>
-      </div>
-      <div class="header-badges">
-        <button class="save-btn" id="saveBtn">💾 Save</button>
-        <button class="reset-btn" id="resetBtn">🔄 Reset</button>
+        ${STATE.devMode?`<span style="display:inline-block;margin-top:4px;font-size:11px;font-weight:800;color:var(--accent1-dark);background:rgba(124,58,237,0.12);border-radius:999px;padding:3px 10px">🛠️ Developer Mode — all days visible</span>`:""}
       </div>
     </header>
-    <p class="signature">by <span style="color:var(--blue)">BCD</span></p>
 
     <div class="progress-track">
       <div class="progress-fill" style="width:${pct}%"></div>
@@ -1098,7 +1395,7 @@ function renderLesson(){
   const d=STATE.activeDay;
   const c=d.countries[STATE.cardIndex];
   const isLast=STATE.cardIndex===d.countries.length-1;
-  const cont=CONTINENTS.find(x=>x.id===d.continent);
+  const cont=ACTIVE_CONTINENTS.find(x=>x.id===d.continent);
 
   const dots=d.countries.map((_,i)=>`<span class="dot" style="background:${i<=STATE.cardIndex?cont.color:"#E5E5E5"}"></span>`).join("");
 
@@ -1240,8 +1537,8 @@ function renderQuickHub(){
     </div>
     <p class="lesson-eyebrow" style="margin-top:0">Choose a game mode</p>
     <div style="display:flex;flex-direction:column;gap:12px">
-      ${quickGameCard({emoji:"🎯",title:"Flag Match",desc:"8 flags · multiple choice, from your collected stamps",ready:matchReady,lockMsg:`🔒 Collect at least 4 stamps to unlock · you have ${count}`,id:"playGame1"})}
-      ${quickGameCard({emoji:"👀",title:"Lookalike Flags",desc:"Spot the difference between commonly confused flags",ready:lookalikeReady,lockMsg:"🔒 Collect a few more stamps to unlock",id:"playGame2"})}
+      ${quickGameCard({emoji:"🎯",title:"Flag Match",desc:`${quick5QuizSize()} flags · multiple choice, from your collected stamps`,ready:matchReady,lockMsg:`🔒 Collect at least 4 stamps to unlock · you have ${count}`,id:"playGame1"})}
+      ${quickGameCard({emoji:"👀",title:"Lookalike Flags",desc:"Drag each name onto its matching flag — no more guessing from a list!",ready:lookalikeReady,lockMsg:"🔒 Collect a few more stamps to unlock",id:"playGame2"})}
       ${quickGameCard({emoji:"⌨️",title:"Type It Out",desc:"Type the country name from memory — no hints!",ready:typeReady,lockMsg:`🔒 Collect at least 4 stamps to unlock · you have ${count}`,id:"playGame3"})}
       ${quickGameCard({emoji:"🔍",title:"Spot The Flag",desc:"A clue about a color, shape, or symbol — find the matching flag",ready:visualReady,lockMsg:"🔒 Collect a few more stamps to unlock",id:"playGame4"})}
       ${quickGameCard({emoji:"🌍",title:"What Continent?",desc:"See a country name — pick the continent it's on",ready:continentReady,lockMsg:`🔒 Collect at least 4 stamps to unlock · you have ${count}`,id:"playGame5"})}
@@ -1324,9 +1621,11 @@ function renderQuick5Result(){
    LOOKALIKE FLAGS QUIZ VIEW (Game 2)
 ================================================================ */
 function renderLookalikeQuiz(){
-  const q=STATE.lookalikeQuiz[STATE.lookalikeQIndex];
-  const sel=STATE.lookalikeSelected;
+  const round=STATE.lookalikeQuiz[STATE.lookalikeQIndex];
   const total=STATE.lookalikeQuiz.length;
+  const placed=STATE.lookalikePlaced;
+  const submitted=STATE.lookalikeSubmitted;
+  const allPlaced=Object.keys(placed).length===round.countries.length;
 
   const pips=Array.from({length:total},(_,i)=>{
     const done=i<STATE.lookalikeQIndex;
@@ -1334,18 +1633,47 @@ function renderLookalikeQuiz(){
     return `<div style="width:18px;height:10px;border-radius:999px;background:${done?"var(--gold)":cur?"rgba(230,172,0,0.45)":"var(--line)"};transition:background .3s"></div>`;
   }).join("");
 
-  const choiceBtns=q.choices.map(ch=>{
-    const cls=sel?(ch===q.answer?" choice-correct":ch===sel?" choice-wrong":""):"";
-    return `<button class="choice-btn${cls}" ${sel?"disabled":""} data-lookalikechoice="${ch}">${ch}</button>`;
+  const flagSlots=round.flagOrder.map(name=>{
+    const c=round.countries.find(x=>x.name===name);
+    const placedChip=placed[name];
+    let stateClass="", label="Drop here";
+    if(submitted){
+      const isCorrect=placedChip===name;
+      stateClass=isCorrect?" correct":" wrong";
+      label=isCorrect?`✅ ${name}`:`❌ ${name} <span style="font-weight:700;opacity:.75">(you put ${placedChip||"nothing"})</span>`;
+    } else if(placedChip){
+      stateClass=" filled";
+      label=placedChip;
+    }
+    return `<div class="matchflag-slot${stateClass}" data-flagslot="${name}">
+      <span class="matchflag-emoji">${c.flag}</span>
+      <span class="matchflag-label">${label}</span>
+    </div>`;
   }).join("");
 
-  const feedback=sel?`<div class="feedback-bar feedback-enter" style="background:${sel===q.answer?"var(--green-bg)":"var(--red-bg)"};border-color:${sel===q.answer?"var(--green)":"var(--red)"}">
-    <p class="feedback-heading" style="color:${sel===q.answer?"var(--green-text)":"var(--red-text)"}">${sel===q.answer?"🎉 Correct!":"❌ "+q.answer}</p>
-    <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;font-weight:700">📍 Capital: <strong>${q.capital}</strong></p>
-    ${q.attraction?`<div class="feedback-attraction">🌟 Must-see: <strong>${q.attraction}</strong></div>`:""}
-    <p class="feedback-fact">${q.fact}</p>
-    <button class="btn ${sel===q.answer?"btn-primary":"btn-secondary"}" id="nextLookalike">${STATE.lookalikeQIndex+1>=total?"👀 See Results":"Next →"}</button>
-  </div>`:"";
+  const placedChipNames=new Set(Object.values(placed));
+  const chips=round.chipOrder.filter(name=>!placedChipNames.has(name)).map(name=>
+    `<div class="matchchip" data-chip="${name}">${name}</div>`
+  ).join("");
+
+  const factsList=round.countries.map(c=>
+    `<p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;font-weight:600;text-align:left"><strong style="color:var(--ink)">${c.flag} ${c.name}:</strong> ${c.fact}</p>`
+  ).join("");
+
+  let actionArea;
+  if(!submitted){
+    actionArea=`<div style="text-align:center;margin-bottom:150px">
+      <button class="btn btn-primary" id="submitLookalike" ${allPlaced?"":"disabled"} style="${allPlaced?"":"opacity:.4;pointer-events:none"}">✅ Submit</button>
+    </div>`;
+  } else {
+    const correctCount=round.countries.filter(c=>placed[c.name]===c.name).length;
+    const allCorrect=correctCount===round.countries.length;
+    actionArea=`<div class="feedback-bar feedback-enter" style="background:${allCorrect?"var(--green-bg)":"var(--red-bg)"};border-color:${allCorrect?"var(--green)":"var(--red)"}">
+      <p class="feedback-heading" style="color:${allCorrect?"var(--green-text)":"var(--red-text)"}">${allCorrect?"🎉 All correct!":`✅ ${correctCount}/${round.countries.length} correct`}</p>
+      ${factsList}
+      <button class="btn btn-primary" id="nextLookalike">${STATE.lookalikeQIndex+1>=total?"👀 See Results":"Next →"}</button>
+    </div>`;
+  }
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
@@ -1354,10 +1682,10 @@ function renderLookalikeQuiz(){
       <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.lookalikeQIndex+1}/${total}</span>
     </div>
 
-    <p class="quiz-question-label">Which country is this flag? 👀</p>
-    <div class="quiz-flag-wrap"><span class="quiz-flag">${q.flag}</span></div>
-    <div class="choices-grid">${choiceBtns}</div>
-    ${feedback}
+    <p class="quiz-question-label">${submitted?"Here's how you did 👀":"Drag each name onto its matching flag, then submit 👀"}</p>
+    <div class="matchflags-grid" id="matchFlagsGrid">${flagSlots}</div>
+    <div class="matchchips-row" id="matchChipsRow">${chips}</div>
+    ${actionArea}
   </div>`;
 }
 
@@ -1365,7 +1693,7 @@ function renderLookalikeQuiz(){
    LOOKALIKE FLAGS RESULT VIEW
 ================================================================ */
 function renderLookalikeResult(){
-  const total=STATE.lookalikeQuiz.length;
+  const total=STATE.lookalikeTotal;
   const score=STATE.lookalikeScore;
   const pct=total?Math.round((score/total)*100):0;
   const tier=pct===100?100:pct>=75?75:pct>=50?50:0;
@@ -1626,17 +1954,118 @@ function renderContinentResult(){
 }
 
 /* ================================================================
+   LOOKALIKE FLAGS — DRAG & DROP LOGIC
+   Supports real drag (mouse + touch via Pointer Events) as well as
+   a tap-to-select / tap-to-place fallback for trickier touchscreens.
+================================================================ */
+function placeLookalikeChip(chipName, slotName){
+  if(STATE.lookalikeSubmitted) return;
+  Object.keys(STATE.lookalikePlaced).forEach(k=>{
+    if(STATE.lookalikePlaced[k]===chipName) delete STATE.lookalikePlaced[k];
+  });
+  STATE.lookalikePlaced[slotName]=chipName;
+  render();
+}
+
+function unplaceLookalikeSlot(slotName){
+  if(STATE.lookalikeSubmitted) return;
+  if(!STATE.lookalikePlaced[slotName]) return;
+  delete STATE.lookalikePlaced[slotName];
+  render();
+}
+
+function submitLookalikeRound(){
+  if(STATE.lookalikeSubmitted) return;
+  const round=STATE.lookalikeQuiz[STATE.lookalikeQIndex];
+  const correctCount=round.countries.filter(c=>STATE.lookalikePlaced[c.name]===c.name).length;
+  STATE.lookalikeScore+=correctCount;
+  STATE.lookalikeSubmitted=true;
+  if(correctCount===round.countries.length) launchConfetti(30);
+  render();
+}
+
+function initLookalikeDrag(){
+  if(STATE.lookalikeSubmitted) return;
+  document.querySelectorAll(".matchchip").forEach(chip=>{
+    chip.style.touchAction="none";
+    chip.addEventListener("pointerdown",e=>{
+      e.preventDefault();
+      let moved=false;
+      const startX=e.clientX, startY=e.clientY;
+      const rect=chip.getBoundingClientRect();
+      const offsetX=startX-rect.left, offsetY=startY-rect.top;
+      const clone=chip.cloneNode(true);
+      clone.classList.add("matchchip-drag");
+      clone.style.position="fixed";
+      clone.style.left=rect.left+"px";
+      clone.style.top=rect.top+"px";
+      clone.style.width=rect.width+"px";
+      clone.style.pointerEvents="none";
+      clone.style.margin="0";
+      clone.style.zIndex="9999";
+      document.body.appendChild(clone);
+      chip.classList.add("matchchip-source-hidden");
+
+      function onMove(ev){
+        const dx=ev.clientX-startX, dy=ev.clientY-startY;
+        if(Math.abs(dx)>5||Math.abs(dy)>5) moved=true;
+        clone.style.left=(ev.clientX-offsetX)+"px";
+        clone.style.top=(ev.clientY-offsetY)+"px";
+        const el=document.elementFromPoint(ev.clientX,ev.clientY);
+        const slot=el&&el.closest(".matchflag-slot");
+        document.querySelectorAll(".matchflag-slot.drag-over").forEach(s=>s.classList.remove("drag-over"));
+        if(slot) slot.classList.add("drag-over");
+      }
+      function onUp(ev){
+        document.removeEventListener("pointermove",onMove);
+        clone.remove();
+        chip.classList.remove("matchchip-source-hidden");
+        document.querySelectorAll(".matchflag-slot.drag-over").forEach(s=>s.classList.remove("drag-over"));
+        if(moved){
+          const el=document.elementFromPoint(ev.clientX,ev.clientY);
+          const slot=el&&el.closest(".matchflag-slot");
+          if(slot) placeLookalikeChip(chip.dataset.chip,slot.dataset.flagslot);
+        } else {
+          const wasSelected=chip.classList.contains("selected");
+          document.querySelectorAll(".matchchip.selected").forEach(c=>c.classList.remove("selected"));
+          if(!wasSelected) chip.classList.add("selected");
+        }
+      }
+      document.addEventListener("pointermove",onMove);
+      document.addEventListener("pointerup",onUp,{once:true});
+    });
+  });
+  document.querySelectorAll(".matchflag-slot").forEach(slot=>{
+    slot.addEventListener("click",()=>{
+      const slotName=slot.dataset.flagslot;
+      if(slot.classList.contains("filled")){ unplaceLookalikeSlot(slotName); return; }
+      const sel=document.querySelector(".matchchip.selected");
+      if(sel){ sel.classList.remove("selected"); placeLookalikeChip(sel.dataset.chip,slotName); }
+    });
+  });
+}
+
+/* ================================================================
    EVENT BINDING
 ================================================================ */
 function bindEvents(){
   const $ = id=>document.getElementById(id);
   const on = (id,ev,fn)=>{const el=$(id);if(el)el.addEventListener(ev,fn);};
 
+  /* PROFILE SELECT */
+  document.querySelectorAll("[data-profile]").forEach(btn=>{
+    btn.addEventListener("click",async()=>{
+      await selectProfile(btn.dataset.profile);
+    });
+  });
+  on("switchPlayerBtn","click",()=>{ STATE.view="profileSelect"; render(); });
+  on("devModeTrigger","click",()=>{ showDevPasswordModal(); });
+
   /* PATH */
   document.querySelectorAll("[data-day]").forEach(btn=>{
     btn.addEventListener("click",()=>{
       const day=parseInt(btn.dataset.day);
-      if(day>STATE.unlockedDay)return;
+      if(day>STATE.unlockedDay&&!STATE.devMode)return;
       STATE.activeDay=dayLookup(day);
       STATE.cardIndex=0;
       STATE.view="lesson";
@@ -1647,7 +2076,6 @@ function bindEvents(){
   on("openDashboard","click",()=>{STATE.view="dashboard";render();});
   on("quitDashboard","click",()=>{STATE.view="path";render();});
   on("saveBtn","click",()=>saveState());
-  on("resetBtn","click",()=>showResetModal());
   document.querySelectorAll("[data-continent]").forEach(btn=>{
     btn.addEventListener("click",()=>{
       const id=btn.dataset.continent;
@@ -1727,14 +2155,7 @@ function bindEvents(){
     STATE.view="quick5";
     render();
   });
-  on("playGame2","click",()=>{
-    STATE.lookalikeQuiz=buildLookalikeQuiz();
-    STATE.lookalikeQIndex=0;
-    STATE.lookalikeSelected=null;
-    STATE.lookalikeScore=0;
-    STATE.view="lookalike";
-    render();
-  });
+  on("playGame2","click",()=>{ startLookalikeQuiz(); });
   on("playGame3","click",()=>{
     STATE.typeQuiz=buildTypeQuiz();
     STATE.typeQIndex=0;
@@ -1792,31 +2213,19 @@ function bindEvents(){
     STATE.view="quick5";render();
   });
 
-  /* LOOKALIKE FLAGS (Game 2) */
+  /* LOOKALIKE FLAGS (Game 2) — drag & drop matching */
   on("quitLookalike","click",()=>{STATE.view="quickHub";render();});
-  document.querySelectorAll("[data-lookalikechoice]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      if(STATE.lookalikeSelected)return;
-      const ch=btn.dataset.lookalikechoice;
-      STATE.lookalikeSelected=ch;
-      const correct=ch===STATE.lookalikeQuiz[STATE.lookalikeQIndex].answer;
-      if(correct){STATE.lookalikeScore++;launchConfetti(15);}
-      render();
-    });
-  });
+  if(STATE.view==="lookalike") initLookalikeDrag();
+  on("submitLookalike","click",()=>{ submitLookalikeRound(); });
   on("nextLookalike","click",()=>{
     if(STATE.lookalikeQIndex+1>=STATE.lookalikeQuiz.length){
-      if(STATE.lookalikeScore===STATE.lookalikeQuiz.length)launchConfetti(80);
+      if(STATE.lookalikeScore===STATE.lookalikeTotal)launchConfetti(80);
       STATE.view="lookalikeresult";render();
     } else {
-      STATE.lookalikeQIndex++;STATE.lookalikeSelected=null;render();
+      STATE.lookalikeQIndex++;STATE.lookalikeMatched={};STATE.lookalikePlaced={};STATE.lookalikeSubmitted=false;render();
     }
   });
-  on("retryLookalike","click",()=>{
-    STATE.lookalikeQuiz=buildLookalikeQuiz();
-    STATE.lookalikeQIndex=0;STATE.lookalikeSelected=null;STATE.lookalikeScore=0;
-    STATE.view="lookalike";render();
-  });
+  on("retryLookalike","click",()=>{ startLookalikeQuiz(); });
 
   /* TYPE IT OUT (Game 3) */
   on("quitType","click",()=>{STATE.view="quickHub";render();});
@@ -1834,7 +2243,7 @@ function bindEvents(){
     const q=STATE.typeQuiz[STATE.typeQIndex];
     STATE.typeSubmitted=true;
     const correct=normalizeAnswer(STATE.typeInput)===normalizeAnswer(q.answer);
-    if(correct){STATE.typeScore++;launchConfetti(15);}
+    if(correct){STATE.typeScore++;STATE.correctCounts[q.answer]=(STATE.correctCounts[q.answer]||0)+1;launchConfetti(15);}
     render();
   }
   on("nextTypeQ","click",()=>{
@@ -1859,7 +2268,7 @@ function bindEvents(){
       const ch=btn.dataset.visualchoice;
       STATE.visualSelected=ch;
       const correct=ch===STATE.visualQuiz[STATE.visualQIndex].answer;
-      if(correct){STATE.visualScore++;launchConfetti(15);}
+      if(correct){STATE.visualScore++;STATE.correctCounts[ch]=(STATE.correctCounts[ch]||0)+1;launchConfetti(15);}
       render();
     });
   });
@@ -1884,8 +2293,9 @@ function bindEvents(){
       if(STATE.continentSelected)return;
       const ch=btn.dataset.continentchoice;
       STATE.continentSelected=ch;
-      const correct=ch===STATE.continentQuiz[STATE.continentQIndex].answer;
-      if(correct){STATE.continentScore++;launchConfetti(15);}
+      const cq=STATE.continentQuiz[STATE.continentQIndex];
+      const correct=ch===cq.answer;
+      if(correct){STATE.continentScore++;STATE.correctCounts[cq.name]=(STATE.correctCounts[cq.name]||0)+1;launchConfetti(15);}
       render();
     });
   });
@@ -1904,9 +2314,21 @@ function bindEvents(){
   });
 }
 
+/* Sets up the correct day-path/continents for the chosen player,
+   loads their own save data, and shows the map. */
+async function selectProfile(profileId){
+  STATE.profile=profileId;
+  const {days,continents}=pathDataFor(profileId);
+  ACTIVE_DAYS=days;
+  ACTIVE_CONTINENTS=continents;
+  await loadState(profileId);
+  STATE.view="path";
+  render();
+}
+
 /* ── Boot ── */
 (async function boot(){
-  await loadState();
+  try{ if(localStorage.getItem("flagAtlasDevUnlocked")==="1") STATE.devMode=true; }catch(e){}
   render();
 })();
 </script>
