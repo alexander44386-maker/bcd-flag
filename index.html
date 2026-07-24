@@ -206,6 +206,12 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 .dash-flag{font-size:19px;flex-shrink:0}
 .dash-name{flex:1;font-size:13.5px;font-weight:700;color:var(--ink)}
 .dash-count{font-size:12px;font-weight:800;color:var(--accent1);background:rgba(124,58,237,0.1);border-radius:999px;padding:3px 11px;flex-shrink:0}
+.bookmark-btn{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;background:#fff;border:2px solid var(--line);box-shadow:0 3px 0 var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:transform .1s;flex-shrink:0}
+.bookmark-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.bookmark-btn.active{background:#FFF6D8;border-color:#F0B300;box-shadow:0 3px 0 #F0B300}
+.dash-row-bookmark .dash-capital{flex:1;font-size:11.5px;color:var(--ink-soft);font-weight:600}
+.bookmark-remove-btn{font-size:18px;background:none;border:none;cursor:pointer;flex-shrink:0;padding:4px;line-height:1}
+.bookmarks-empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:13.5px;font-weight:600}
 .dash-count-zero{color:var(--red-text);background:var(--red-bg)}
 
 /* ── LEADERBOARD CARD ── */
@@ -688,11 +694,23 @@ const LOOKALIKE_GROUPS = [
   ["Ireland","Ivory Coast"],
   ["Colombia","Ecuador","Venezuela"],
   ["Australia","New Zealand"],
-  ["Slovakia","Slovenia","Russia"],
-  ["Norway","Sweden","Finland","Denmark"],
-  ["Mali","Guinea","Senegal"],
+  ["Slovakia","Slovenia","Russia","Serbia"],
+  ["Norway","Sweden","Finland","Denmark","Iceland"],
+  ["Mali","Guinea","Senegal","Cameroon"],
   ["Belgium","Germany"],
   ["Romania","Armenia"],
+  ["Chad","Romania"],
+  ["Mexico","Italy"],
+  ["Yemen","Egypt","Syria","Iraq"],
+  ["Jordan","Palestine","Kuwait","United Arab Emirates"],
+  ["Nicaragua","El Salvador","Honduras"],
+  ["Liberia","United States"],
+  ["Costa Rica","Thailand"],
+  ["Niger","India"],
+  ["Bahrain","Qatar"],
+  ["Vietnam","China"],
+  ["Tunisia","Turkey"],
+  ["Pakistan","Algeria"],
 ];
 
 /* ── Visual clues for "Spot the Flag" (Game 4) ──
@@ -728,7 +746,7 @@ const VISUAL_CLUES = [
   {clue:"Which flag is mostly light blue with a black-and-white stripe across it?",answer:"Botswana",distractors:["Kazakhstan","Argentina","Micronesia"]},
   {clue:"Which flag is light blue with four white stars?",answer:"Micronesia",distractors:["Somalia","Kazakhstan","Botswana"]},
   {clue:"Which flag is light blue with a Union Jack in the corner and no stars?",answer:"Fiji",distractors:["Australia","New Zealand","United Kingdom"]},
-  {clue:"Which flag is green, white, then orange vertical stripes (green on the left)?",answer:"Ireland",distractors:["Ivory Coast","Italy","Mexico"]},
+  {clue:"Which flag has a green stripe?",answer:"Ireland",distractors:["Poland","Japan","Turkey"]},
   {clue:"Which flag has green, yellow, and red horizontal stripes with a black star?",answer:"Ghana",distractors:["Senegal","Cameroon","Mali"]},
   {clue:"Which flag is a red field with a green five-pointed star in the center?",answer:"Morocco",distractors:["Turkey","Vietnam","Somalia"]},
   {clue:"Which flag has thick orange, white, and green vertical stripes with a navy wheel?",answer:"India",distractors:["Ireland","Ivory Coast","Nigeria"]},
@@ -776,10 +794,10 @@ function cloudSaveUrlFor(profileId){
   return `${base}/${slot}.json`;
 }
 
-async function saveState(){
-  const SAVE_KEY = saveKeyFor(STATE.profile);
-  const CLOUD_SAVE_URL = cloudSaveUrlFor(STATE.profile);
-  const toSave={
+/* Shared shape of everything that gets persisted, used by both the
+   full cloud save and the local-only save. */
+function buildSaveData(){
+  return {
     unlockedDay: STATE.unlockedDay,
     completedDays: STATE.completedDays,
     streak: STATE.streak,
@@ -791,7 +809,22 @@ async function saveState(){
     typeHistory: STATE.typeHistory,
     continentHistory: STATE.continentHistory,
     reviewSchedule: STATE.reviewSchedule,
+    bookmarkedFlags: STATE.bookmarkedFlags,
   };
+}
+
+/* Writes to localStorage only — no network call. Used for lightweight
+   changes (like bookmarking) that shouldn't trigger a cloud sync on
+   their own; the next explicit "Save" tap will push them to Firebase. */
+function saveLocalOnly(){
+  const SAVE_KEY = saveKeyFor(STATE.profile);
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(buildSaveData())); }catch(e){}
+}
+
+async function saveState(){
+  const SAVE_KEY = saveKeyFor(STATE.profile);
+  const CLOUD_SAVE_URL = cloudSaveUrlFor(STATE.profile);
+  const toSave=buildSaveData();
   // Always keep a local copy so the game still works offline.
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(toSave)); }catch(e){}
 
@@ -812,6 +845,21 @@ async function saveState(){
   }
 }
 
+/* Adds/removes a country name from the bookmarked-flags list.
+   Local-only: it won't push to Firebase until the player taps the
+   explicit Save button, same as other in-session changes. */
+function toggleBookmark(name){
+  const idx=STATE.bookmarkedFlags.indexOf(name);
+  if(idx>-1){
+    STATE.bookmarkedFlags.splice(idx,1);
+    showToast("Bookmark removed");
+  } else {
+    STATE.bookmarkedFlags.push(name);
+    showToast("⭐ Bookmarked!");
+  }
+  saveLocalOnly();
+}
+
 async function loadState(profileId){
   const SAVE_KEY = saveKeyFor(profileId);
   const CLOUD_SAVE_URL = cloudSaveUrlFor(profileId);
@@ -828,6 +876,7 @@ async function loadState(profileId){
   STATE.typeHistory=[];
   STATE.continentHistory=[];
   STATE.reviewSchedule={};
+  STATE.bookmarkedFlags=[];
 
   // Try the cloud save first so progress shows up on any device.
   try{
@@ -846,6 +895,7 @@ async function loadState(profileId){
       STATE.typeHistory = saved.typeHistory ?? [];
       STATE.continentHistory = saved.continentHistory ?? [];
       STATE.reviewSchedule = saved.reviewSchedule ?? {};
+      STATE.bookmarkedFlags = saved.bookmarkedFlags ?? [];
       try{ localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); }catch(e){}
       backfillReviewSchedule();
       return;
@@ -869,6 +919,7 @@ async function loadState(profileId){
     STATE.typeHistory = saved.typeHistory ?? [];
     STATE.continentHistory = saved.continentHistory ?? [];
     STATE.reviewSchedule = saved.reviewSchedule ?? {};
+    STATE.bookmarkedFlags = saved.bookmarkedFlags ?? [];
   } catch(e){}
   backfillReviewSchedule();
 }
@@ -885,12 +936,28 @@ function backfillReviewSchedule(){
   });
 }
 
+function flagEmojiToIso2(flag){
+  // Each flag emoji is two "regional indicator" code points, A-Z offset by 0x1F1E6.
+  const chars=[...flag];
+  if(chars.length<2) return null;
+  const codes=chars.map(c=>c.codePointAt(0)-0x1F1E6);
+  if(codes.some(n=>n<0||n>25)) return null;
+  return codes.map(n=>String.fromCharCode(97+n)).join("");
+}
+
 function showFlagZoom(flag){
   const overlay=document.createElement("div");
   overlay.className="modal-overlay";
-  overlay.innerHTML=`<div class="modal-box bounce-in" style="cursor:zoom-out;padding:44px 24px">
-    <span style="font-size:min(50vw,220px);line-height:1;display:block;filter:drop-shadow(0 8px 20px rgba(0,0,0,0.25))">${flag}</span>
-  </div>`;
+  const iso2=flagEmojiToIso2(flag);
+  const imgHtml=iso2
+    ? `<img src="https://flagcdn.com/w1280/${iso2}.png"
+           srcset="https://flagcdn.com/w2560/${iso2}.png 2560w, https://flagcdn.com/w1280/${iso2}.png 1280w, https://flagcdn.com/w640/${iso2}.png 640w"
+           sizes="min(80vw,700px)"
+           alt="${flag}"
+           style="width:min(80vw,700px);max-height:70vh;object-fit:contain;display:block;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,0.25)"
+           onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${flag}',style:'font-size:min(50vw,220px);line-height:1;display:block;filter:drop-shadow(0 8px 20px rgba(0,0,0,0.25))'}))">`
+    : `<span style="font-size:min(50vw,220px);line-height:1;display:block;filter:drop-shadow(0 8px 20px rgba(0,0,0,0.25))">${flag}</span>`;
+  overlay.innerHTML=`<div class="modal-box bounce-in" style="cursor:zoom-out;padding:44px 24px">${imgHtml}</div>`;
   overlay.addEventListener("click",()=>overlay.remove());
   document.body.appendChild(overlay);
 }
@@ -1056,6 +1123,7 @@ let STATE = {
   reviewScore: 0,
   reviewDueDays: [],
   reviewDayResults: {},
+  bookmarkedFlags: [],
 };
 
 /* ================================================================
@@ -1128,7 +1196,7 @@ function pickDistractorsWithLookalikes(correct, pool, count, excludeNames){
 
 function buildDayQuiz(dayData){
   return shuffle(dayData.countries.map(c=>{
-    const wrong=shuffle(ALL_COUNTRIES.filter(x=>x.name!==c.name)).slice(0,3);
+    const wrong=pickDistractorsWithLookalikes(c,ALL_COUNTRIES,3);
     const choices=shuffle([c,...wrong]);
     return {type:"flag",flag:c.flag,answer:c.name,fact:c.fact,capital:c.capital,attraction:c.attraction,choices:choices.map(x=>x.name)};
   }));
@@ -1451,6 +1519,7 @@ function render(){
     case "reviewHub":     app.innerHTML=renderReviewHub(); break;
     case "reviewQuiz":    app.innerHTML=renderReviewQuiz(); break;
     case "reviewResult":  app.innerHTML=renderReviewResult(); break;
+    case "bookmarks":     app.innerHTML=renderBookmarksPage(); break;
   }
   window.scrollTo(0,0);
   bindEvents();
@@ -1528,6 +1597,7 @@ function renderPath(){
 
   return `<div class="path-wrap">
     <div class="header-badges" style="justify-content:flex-end;margin-bottom:14px">
+      <button class="save-btn" id="openBookmarksBtn">🔖 Saved${STATE.bookmarkedFlags.length?` (${STATE.bookmarkedFlags.length})`:""}</button>
       <button class="save-btn" id="switchPlayerBtn">🔀 Switch</button>
     </div>
     <header class="header">
@@ -1626,6 +1696,37 @@ function renderDashboardPage(){
 }
 
 /* ================================================================
+   BOOKMARKS PAGE — flags saved from daily lessons to review later
+================================================================ */
+function renderBookmarksPage(){
+  const flags=STATE.bookmarkedFlags
+    .map(name=>ALL_COUNTRIES.find(c=>c.name===name))
+    .filter(Boolean)
+    .sort((a,b)=>a.name.localeCompare(b.name));
+
+  const rows=flags.map(c=>`<div class="dash-row dash-row-bookmark">
+      <span class="dash-flag">${c.flag}</span>
+      <span class="dash-name">${c.name}</span>
+      <span class="dash-capital">📍 ${c.capital}</span>
+      <button type="button" class="bookmark-remove-btn" data-unbookmark="${c.name}" title="Remove bookmark">⭐</button>
+    </div>`).join("");
+
+  const body=flags.length
+    ? `<div class="dash-list">${rows}</div>`
+    : `<div class="bookmarks-empty">🔖 No saved flags yet.<br>Tap the ☆ on any flag in a daily lesson to save it here.</div>`;
+
+  return `<div class="path-wrap">
+    <div class="top-bar" style="margin-bottom:14px">
+      <button class="icon-btn" id="quitBookmarks">◀</button>
+      <p style="flex:1;text-align:center;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:18px;margin:0">🔖 Saved Flags</p>
+      <div style="width:44px"></div>
+    </div>
+    <p class="lesson-eyebrow" style="margin-top:0">${flags.length} flag${flags.length===1?"":"s"} bookmarked for review</p>
+    ${body}
+  </div>`;
+}
+
+/* ================================================================
    LESSON VIEW
 ================================================================ */
 function renderLesson(){
@@ -1645,7 +1746,8 @@ function renderLesson(){
 
     <p class="lesson-eyebrow">Day ${d.day} · ${d.title}</p>
 
-    <div class="stamp-card stamp-enter" key="${STATE.cardIndex}">
+    <div class="stamp-card stamp-enter" key="${STATE.cardIndex}" style="position:relative">
+      <button type="button" class="bookmark-btn${STATE.bookmarkedFlags.includes(c.name)?" active":""}" id="bookmarkFlagBtn" data-name="${c.name}" title="${STATE.bookmarkedFlags.includes(c.name)?"Remove bookmark":"Bookmark this flag"}">${STATE.bookmarkedFlags.includes(c.name)?"⭐":"☆"}</button>
       <button type="button" id="zoomFlagBtn" data-flag="${c.flag}" style="background:none;border:none;padding:0;cursor:zoom-in;display:block;margin:0 auto"><span class="stamp-flag">${c.flag}</span></button>
       <h3 class="stamp-name">${c.name}</h3>
       <span class="stamp-capital">📍 ${c.capital}</span>
@@ -2404,6 +2506,14 @@ function bindEvents(){
     });
   });
   on("switchPlayerBtn","click",()=>{ STATE.view="profileSelect"; render(); });
+  on("openBookmarksBtn","click",()=>{ STATE.view="bookmarks"; render(); });
+  on("quitBookmarks","click",()=>{ STATE.view="path"; render(); });
+  document.querySelectorAll("[data-unbookmark]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      toggleBookmark(btn.dataset.unbookmark);
+      render();
+    });
+  });
   on("devModeTrigger","click",()=>{ showDevPasswordModal(); });
 
   /* PATH */
@@ -2452,6 +2562,10 @@ function bindEvents(){
   });
   const zoomBtn=$("zoomFlagBtn");
   if(zoomBtn) zoomBtn.addEventListener("click",()=>showFlagZoom(zoomBtn.dataset.flag));
+  on("bookmarkFlagBtn","click",()=>{
+    toggleBookmark($("bookmarkFlagBtn").dataset.name);
+    render();
+  });
 
   /* QUIZ */
   on("quitQuiz","click",()=>{STATE.view="path";render();});
