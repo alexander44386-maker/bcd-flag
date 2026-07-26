@@ -6,6 +6,7 @@
 <title>Flag Atlas 🌍</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js" crossorigin="anonymous"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -28,6 +29,7 @@ body{background:var(--bg-soft);font-family:'Nunito','Segoe UI',sans-serif;color:
     radial-gradient(ellipse at 80% 80%,rgba(236,72,153,0.08) 0%,transparent 60%),
     radial-gradient(ellipse at 50% 50%,rgba(28,176,246,0.05) 0%,transparent 70%);
 }
+img.emoji{height:1em;width:1em;margin:0 .03em 0 .03em;vertical-align:-0.12em;display:inline-block}
 button{font-family:inherit;cursor:pointer;border:none;background:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 button:disabled{cursor:default;opacity:0.5}
 h1,h2,h3{font-family:'Baloo 2',sans-serif}
@@ -986,6 +988,7 @@ function showDevPasswordModal(){
     </div>
   </div>`;
   document.body.appendChild(overlay);
+  twemojiParse(overlay);
   const input=document.getElementById("devPasswordInput");
   input.focus();
   function trySubmit(){
@@ -1064,6 +1067,7 @@ function showContinentFilterModal(onStart){
       onStart(Array.from(selected));
     };
     overlay.querySelector("#cfCancel").onclick=()=>overlay.remove();
+    twemojiParse(overlay);
   }
   draw();
 }
@@ -1496,6 +1500,16 @@ function launchConfetti(count=40){
 /* ================================================================
    RENDER ENGINE
 ================================================================ */
+function twemojiParse(el){
+  // Windows (and some Linux) desktop fonts don't draw flag emoji glyphs —
+  // they fall back to showing the raw two-letter country code (e.g. "US").
+  // Twemoji swaps every emoji character for a real image so flags render
+  // consistently on every OS/browser.
+  if(window.twemoji && el){
+    try{ twemoji.parse(el,{folder:"svg",ext:".svg"}); }catch(e){}
+  }
+}
+
 function render(){
   const app=document.getElementById("app");
   switch(STATE.view){
@@ -1523,6 +1537,7 @@ function render(){
   }
   window.scrollTo(0,0);
   bindEvents();
+  twemojiParse(app);
 }
 
 /* ================================================================
