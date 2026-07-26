@@ -1733,7 +1733,7 @@ function renderLesson(){
   const d=STATE.activeDay;
   const c=d.countries[STATE.cardIndex];
   const isLast=STATE.cardIndex===d.countries.length-1;
-  const cont=ACTIVE_CONTINENTS.find(x=>x.id===d.continent);
+  const cont=ACTIVE_CONTINENTS.find(x=>x.id===d.continent) || ACTIVE_CONTINENTS.find(x=>x.days&&x.days.includes(d.day));
 
   const dots=d.countries.map((_,i)=>`<span class="dot" style="background:${i<=STATE.cardIndex?cont.color:"#E5E5E5"}"></span>`).join("");
 
