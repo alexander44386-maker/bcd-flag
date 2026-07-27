@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js" crossorigin="anonymous"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+img.emoji{height:1em;width:1em;margin:0 .05em 0 .1em;vertical-align:-0.1em}
 html{-webkit-text-size-adjust:100%}
 :root{
   --green:#58CC02; --green-dark:#46A302; --green-bg:#D7FFB8; --green-text:#3C8403;
@@ -29,7 +30,6 @@ body{background:var(--bg-soft);font-family:'Nunito','Segoe UI',sans-serif;color:
     radial-gradient(ellipse at 80% 80%,rgba(236,72,153,0.08) 0%,transparent 60%),
     radial-gradient(ellipse at 50% 50%,rgba(28,176,246,0.05) 0%,transparent 70%);
 }
-img.emoji{height:1em;width:1em;margin:0 .03em 0 .03em;vertical-align:-0.12em;display:inline-block}
 button{font-family:inherit;cursor:pointer;border:none;background:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 button:disabled{cursor:default;opacity:0.5}
 h1,h2,h3{font-family:'Baloo 2',sans-serif}
@@ -200,6 +200,27 @@ h1,h2,h3{font-family:'Baloo 2',sans-serif}
 
 /* ── CONFETTI ── */
 .confetti-piece{position:fixed;width:10px;height:10px;border-radius:2px;pointer-events:none;z-index:9999;animation:confettiFall linear forwards}
+
+/* ── FLOATING SESSION TIMER ── */
+.floating-timer{position:fixed;top:14px;right:14px;z-index:8000;background:rgba(30,24,48,0.88);color:#fff;padding:8px 14px;border-radius:999px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:13px;display:flex;align-items:center;gap:7px;box-shadow:0 4px 14px rgba(0,0,0,0.25);backdrop-filter:blur(4px);transition:background .3s,transform .2s;cursor:pointer;user-select:none}
+.floating-timer:active{transform:scale(0.96)}
+.floating-timer.over-time{background:rgba(220,38,38,0.92)}
+.floating-timer .ft-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;animation:ftPulse 1.4s ease-in-out infinite}
+.floating-timer.over-time .ft-dot{background:#fef08a}
+@keyframes ftPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (max-width:480px){.floating-timer{top:10px;right:10px;padding:7px 11px;font-size:11.5px}}
+
+/* ── BREN TIME-ASK SCREEN ── */
+.time-ask-wrap{max-width:420px;margin:0 auto;padding:40px 20px;text-align:center;min-height:100vh;display:flex;flex-direction:column;justify-content:center}
+.time-ask-emoji{font-size:52px;margin-bottom:10px}
+.time-ask-title{font-size:22px;font-weight:800;color:var(--ink);margin-bottom:6px;font-family:'Baloo 2',sans-serif}
+.time-ask-sub{font-size:14px;color:var(--ink-soft);margin-bottom:26px;font-weight:600}
+.time-ask-options{display:flex;gap:12px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+.time-ask-chip{background:#fff;border:2.5px solid var(--line);box-shadow:0 4px 0 var(--line);border-radius:16px;padding:16px 22px;font-weight:800;font-size:16px;color:var(--ink);cursor:pointer;min-width:88px}
+.time-ask-chip.selected{border-color:var(--accent1);box-shadow:0 4px 0 var(--accent1-dark);color:var(--accent1-dark);background:rgba(124,58,237,0.07)}
+.time-ask-manual{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:26px}
+.time-ask-manual input{width:80px;text-align:center;font-size:16px;font-weight:800;padding:12px;border-radius:14px;border:2.5px solid var(--line);font-family:inherit}
+.time-ask-manual span{font-weight:700;color:var(--ink-soft);font-size:13px}
 
 
 /* ── FLAG MATCH DASHBOARD ── */
@@ -974,6 +995,25 @@ function showToast(msg){
   setTimeout(()=>el.remove(),2500);
 }
 
+/* Generic yes/no confirmation popup. Reused for per-continent dashboard resets. */
+function showConfirmModal({title,body,confirmLabel="Confirm",cancelLabel="Cancel",onConfirm}){
+  const overlay=document.createElement("div");
+  overlay.className="modal-overlay";
+  overlay.innerHTML=`<div class="modal-box">
+    <div class="modal-title">${title}</div>
+    <div class="modal-body">${body}</div>
+    <div class="modal-actions">
+      <button class="btn btn-red" id="confirmModalYes">${confirmLabel}</button>
+      <button class="btn btn-secondary" id="confirmModalNo">${cancelLabel}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  const cleanup=()=>overlay.remove();
+  document.getElementById("confirmModalYes").onclick=()=>{ cleanup(); onConfirm(); };
+  document.getElementById("confirmModalNo").onclick=cleanup;
+  overlay.addEventListener("click",e=>{ if(e.target===overlay) cleanup(); });
+}
+
 function showDevPasswordModal(){
   const overlay=document.createElement("div");
   overlay.className="modal-overlay";
@@ -988,7 +1028,6 @@ function showDevPasswordModal(){
     </div>
   </div>`;
   document.body.appendChild(overlay);
-  twemojiParse(overlay);
   const input=document.getElementById("devPasswordInput");
   input.focus();
   function trySubmit(){
@@ -1067,7 +1106,6 @@ function showContinentFilterModal(onStart){
       onStart(Array.from(selected));
     };
     overlay.querySelector("#cfCancel").onclick=()=>overlay.remove();
-    twemojiParse(overlay);
   }
   draw();
 }
@@ -1077,6 +1115,11 @@ function showContinentFilterModal(onStart){
 ================================================================ */
 let STATE = {
   profile: null,
+  pendingTimerProfile: null,
+  timerManualValue: "",
+  sessionMinutes: null,
+  sessionStartMs: null,
+  timerActive: false,
   unlockedDay: 1,
   completedDays: [],
   streak: 0,
@@ -1500,20 +1543,11 @@ function launchConfetti(count=40){
 /* ================================================================
    RENDER ENGINE
 ================================================================ */
-function twemojiParse(el){
-  // Windows (and some Linux) desktop fonts don't draw flag emoji glyphs —
-  // they fall back to showing the raw two-letter country code (e.g. "US").
-  // Twemoji swaps every emoji character for a real image so flags render
-  // consistently on every OS/browser.
-  if(window.twemoji && el){
-    try{ twemoji.parse(el,{folder:"svg",ext:".svg"}); }catch(e){}
-  }
-}
-
 function render(){
   const app=document.getElementById("app");
   switch(STATE.view){
     case "profileSelect": app.innerHTML=renderProfileSelect(); break;
+    case "timeAsk":      app.innerHTML=renderTimeAsk(); break;
     case "path":         app.innerHTML=renderPath(); break;
     case "dashboard":    app.innerHTML=renderDashboardPage(); break;
     case "lesson":       app.innerHTML=renderLesson(); break;
@@ -1537,7 +1571,28 @@ function render(){
   }
   window.scrollTo(0,0);
   bindEvents();
-  twemojiParse(app);
+  if(window.twemoji) twemoji.parse(app);
+}
+
+/* ================================================================
+   TIME ASK — "How many minutes will you play?" (shown for Bren)
+================================================================ */
+function renderTimeAsk(){
+  const manual=STATE.timerManualValue||"";
+  return `<div class="time-ask-wrap">
+    <div class="time-ask-emoji">⏱️</div>
+    <div class="time-ask-title">How many minutes will you play?</div>
+    <div class="time-ask-sub">A little timer will float on screen so you know how long you've been playing 🌍</div>
+    <div class="time-ask-options">
+      <button type="button" class="time-ask-chip" data-timepick="10">10 min</button>
+      <button type="button" class="time-ask-chip" data-timepick="15">15 min</button>
+    </div>
+    <div class="time-ask-manual">
+      <input type="number" min="1" max="180" id="timeManualInput" placeholder="e.g. 20" value="${manual}">
+      <span>minutes</span>
+    </div>
+    <button type="button" class="btn btn-primary" id="timeAskGo" style="width:100%">Let's go →</button>
+  </div>`;
 }
 
 /* ================================================================
@@ -1689,12 +1744,13 @@ function renderDashboardPage(){
     }).join("");
 
     return `<section>
-      <button type="button" class="chapter-header" data-dashcontinent="${cont.id}" style="--chap-color:${cont.color};width:100%;text-align:left">
+      <div class="chapter-header" data-dashcontinent="${cont.id}" style="--chap-color:${cont.color};width:100%;text-align:left;cursor:pointer">
         <span class="chapter-dot"></span>
         <h2 class="chapter-title">${cont.name}</h2>
         <span class="chapter-sub">${totalCorrect} ✓ total</span>
+        <button type="button" class="icon-btn" data-resetcontinent="${cont.id}" title="Reset ${cont.name} stats" style="width:30px;height:30px;font-size:14px;flex-shrink:0;margin-right:2px">🗑️</button>
         <span style="color:#fff;font-size:13px;flex-shrink:0;transition:transform .2s ease;transform:rotate(${collapsed?"-90deg":"0deg"})">▼</span>
-      </button>
+      </div>
       ${collapsed?"":`<div class="dash-list">${rows}</div>`}
     </section>`;
   }).join("");
@@ -1923,14 +1979,14 @@ function renderQuick5Quiz(){
     <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;font-weight:700">📍 Capital: <strong>${q.capital}</strong></p>
     ${q.attraction?`<div class="feedback-attraction">🌟 Must-see: <strong>${q.attraction}</strong></div>`:""}
     <p class="feedback-fact">${q.fact}</p>
-    <button class="btn ${sel===q.answer?"btn-primary":"btn-secondary"}" id="nextQ5">${STATE.quick5QIndex+1>=8?"⚡ See Results":"Next →"}</button>
+    <button class="btn ${sel===q.answer?"btn-primary":"btn-secondary"}" id="nextQ5">${STATE.quick5QIndex+1>=STATE.quick5Quiz.length?"⚡ See Results":"Next →"}</button>
   </div>`:"";
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
       <button class="icon-btn" id="quitQ5">✕</button>
       <div style="display:flex;gap:6px;flex:1;justify-content:center">${pips}</div>
-      <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.quick5QIndex+1}/8</span>
+      <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.quick5QIndex+1}/${STATE.quick5Quiz.length}</span>
     </div>
 
     <p class="quiz-question-label">Which stamp is this flag? 🎟️</p>
@@ -1945,22 +2001,30 @@ function renderQuick5Quiz(){
 ================================================================ */
 function renderQuick5Result(){
   const score=STATE.quick5Score;
-  const msgs=["📚 Better luck next time!","📚 Better luck next time!","✅ Getting there!","✅ Good effort!","⭐ Nice work!","🌟 Great job!","🌟 Amazing!","🏆 Excellent!","🏆 Perfect score!"];
-  const colors=["#FF4B4B","#FF4B4B","#1CB0F6","#1CB0F6","#FFC800","#58CC02","#58CC02","#7C3AED","#7C3AED"];
-  const emojis=["😅","😅","😊","😊","😎","🌍","🌍","🎉","🎉"];
-  const starsFilled=[0,0,1,1,2,2,3,3,3][score];
+  const total=STATE.quick5Quiz.length;
+  const pct=total?Math.round((score/total)*100):0;
+  const tier=pct===100?100:pct>=75?75:pct>=50?50:0;
+  const msgs={
+    100:"🏆 Perfect score!",
+    75:"🌟 Great job!",
+    50:"⭐ Nice work!",
+    0:"📚 Better luck next time!"
+  };
+  const colors={100:"#7C3AED",75:"#58CC02",50:"#FFC800",0:"#FF4B4B"};
+  const emojis={100:"🎉",75:"🌍",50:"😎",0:"😅"};
+  const starsFilled=tier===100?3:tier>=75?2:tier>=50?1:0;
   const stars=["⭐","⭐","⭐"].map((s,i)=>`<span style="opacity:${i<starsFilled?1:0.2};font-size:36px">${s}</span>`).join("");
 
   return `<div class="result-wrap">
-    <div style="font-size:72px;margin-bottom:6px;animation:bounceIn .7s ease">${emojis[score]}</div>
+    <div style="font-size:72px;margin-bottom:6px;animation:bounceIn .7s ease">${emojis[tier]}</div>
     <div style="display:flex;gap:4px;margin-bottom:12px">${stars}</div>
-    <h2 class="result-title" style="color:${colors[score]}">${msgs[score]}</h2>
+    <h2 class="result-title" style="color:${colors[tier]}">${msgs[tier]}</h2>
     <p class="result-subtitle">Stamp Quiz Complete! · ${getCollectedCountries().length} stamps collected</p>
 
     <div class="leaderboard-card">
       <div style="font-size:13px;color:var(--ink-soft);font-weight:800;margin-bottom:8px">Your Score</div>
-      <div style="font-size:42px;font-weight:800;color:var(--ink);margin-bottom:6px;font-family:'Baloo 2',sans-serif">${score} / 8</div>
-      <div class="leaderboard-bar"><div class="leaderboard-fill" style="width:${(score/8)*100}%;background:var(--gold)"></div></div>
+      <div style="font-size:42px;font-weight:800;color:var(--ink);margin-bottom:6px;font-family:'Baloo 2',sans-serif">${score} / ${total}</div>
+      <div class="leaderboard-bar"><div class="leaderboard-fill" style="width:${pct}%;background:var(--gold)"></div></div>
     </div>
 
     <div class="result-actions">
@@ -2517,10 +2581,38 @@ function bindEvents(){
   /* PROFILE SELECT */
   document.querySelectorAll("[data-profile]").forEach(btn=>{
     btn.addEventListener("click",async()=>{
-      await selectProfile(btn.dataset.profile);
+      const pid=btn.dataset.profile;
+      if(pid==="bren"){
+        STATE.pendingTimerProfile="bren";
+        STATE.timerManualValue="";
+        STATE.view="timeAsk";
+        render();
+      } else {
+        await selectProfile(pid);
+      }
     });
   });
-  on("switchPlayerBtn","click",()=>{ STATE.view="profileSelect"; render(); });
+
+  /* TIME ASK (Bren) */
+  document.querySelectorAll("[data-timepick]").forEach(btn=>{
+    btn.addEventListener("click",async()=>{
+      document.querySelectorAll("[data-timepick]").forEach(b=>b.classList.remove("selected"));
+      btn.classList.add("selected");
+      const manualInput=$("timeManualInput");
+      if(manualInput) manualInput.value="";
+      await startTimedSession(parseInt(btn.dataset.timepick,10));
+    });
+  });
+  on("timeAskGo","click",async()=>{
+    const manualInput=$("timeManualInput");
+    const val=manualInput?parseInt(manualInput.value,10):NaN;
+    if(!val||val<1){
+      if(manualInput){manualInput.style.borderColor="var(--red)";manualInput.focus();}
+      return;
+    }
+    await startTimedSession(val);
+  });
+  on("switchPlayerBtn","click",()=>{ stopTimedSession(); STATE.view="profileSelect"; render(); });
   on("openBookmarksBtn","click",()=>{ STATE.view="bookmarks"; render(); });
   on("quitBookmarks","click",()=>{ STATE.view="path"; render(); });
   document.querySelectorAll("[data-unbookmark]").forEach(btn=>{
@@ -2563,6 +2655,27 @@ function bindEvents(){
       if(idx>-1) STATE.collapsedDashboard.splice(idx,1);
       else STATE.collapsedDashboard.push(id);
       render();
+    });
+  });
+  document.querySelectorAll("[data-resetcontinent]").forEach(btn=>{
+    btn.addEventListener("click",(e)=>{
+      e.stopPropagation();
+      const id=btn.dataset.resetcontinent;
+      const cont=CONTINENTS.find(c=>c.id===id);
+      const contName=cont?cont.name:"this continent";
+      showConfirmModal({
+        title:"🗑️ Reset stats?",
+        body:`This clears all Flag Match correct-answer counts for <strong>${contName}</strong>. This can't be undone.`,
+        confirmLabel:"Reset",
+        cancelLabel:"Cancel",
+        onConfirm:()=>{
+          ALL_COUNTRIES.filter(c=>COUNTRY_CONTINENT[c.name]===id).forEach(c=>{
+            delete STATE.correctCounts[c.name];
+          });
+          render();
+          showToast(`${contName} stats reset`);
+        }
+      });
     });
   });
 
@@ -2679,14 +2792,14 @@ function bindEvents(){
       if(correct){
         STATE.quick5Score++;
         STATE.correctCounts[answer]=(STATE.correctCounts[answer]||0)+1;
-        launchConfetti(15);
+        if(Math.random()<0.5) launchConfetti(15);
       }
       render();
     });
   });
   on("nextQ5","click",()=>{
     if(STATE.quick5QIndex+1>=STATE.quick5Quiz.length){
-      if(STATE.quick5Score>=6)launchConfetti(80);
+      if(STATE.quick5Score>=Math.ceil(STATE.quick5Quiz.length*0.75))launchConfetti(80);
       STATE.view="quick5result";render();
     } else {
       STATE.quick5QIndex++;STATE.quick5Selected=null;render();
@@ -2854,6 +2967,74 @@ async function selectProfile(profileId){
   await loadState(profileId);
   STATE.view="path";
   render();
+}
+
+/* ── Timed session (used for Bren's play-time floating timer) ── */
+let timerIntervalId=null;
+async function startTimedSession(minutes){
+  STATE.sessionMinutes=minutes;
+  STATE.sessionStartMs=Date.now();
+  STATE.timerActive=true;
+  const profileId=STATE.pendingTimerProfile||"bren";
+  STATE.pendingTimerProfile=null;
+  await selectProfile(profileId);
+  startFloatingTimer();
+}
+function stopTimedSession(){
+  STATE.timerActive=false;
+  STATE.sessionMinutes=null;
+  STATE.sessionStartMs=null;
+  if(timerIntervalId){clearInterval(timerIntervalId);timerIntervalId=null;}
+  const el=document.getElementById("floatingTimer");
+  if(el) el.remove();
+}
+function startFloatingTimer(){
+  if(timerIntervalId) clearInterval(timerIntervalId);
+  renderFloatingTimer();
+  timerIntervalId=setInterval(renderFloatingTimer,1000);
+}
+function renderFloatingTimer(){
+  if(!STATE.timerActive||!STATE.sessionStartMs) return;
+  let el=document.getElementById("floatingTimer");
+  if(!el){
+    el=document.createElement("div");
+    el.id="floatingTimer";
+    el.className="floating-timer";
+    el.innerHTML=`<span class="ft-dot"></span><span id="floatingTimerText"></span>`;
+    document.body.appendChild(el);
+    el.addEventListener("click",()=>{
+      el.dataset.expanded=el.dataset.expanded==="1"?"0":"1";
+      renderFloatingTimer();
+    });
+  }
+  const badgesRow=document.querySelector(".header-badges");
+  if(badgesRow){
+    const r=badgesRow.getBoundingClientRect();
+    el.style.top=r.top+"px";
+    el.style.right=(window.innerWidth-r.left+8)+"px";
+  } else {
+    el.style.top="";
+    el.style.right="";
+  }
+  const elapsedMs=Date.now()-STATE.sessionStartMs;
+  const elapsedSec=Math.floor(elapsedMs/1000);
+  const mm=String(Math.floor(elapsedSec/60)).padStart(2,"0");
+  const ss=String(elapsedSec%60).padStart(2,"0");
+  const targetSec=STATE.sessionMinutes*60;
+  const overTime=elapsedSec>=targetSec;
+  el.classList.toggle("over-time",overTime);
+  const textEl=document.getElementById("floatingTimerText");
+  if(textEl){
+    if(overTime){
+      textEl.textContent=`${mm}:${ss} · time's up!`;
+    } else if(el.dataset.expanded==="1"){
+      const tmm=String(Math.floor(targetSec/60)).padStart(2,"0");
+      const tss=String(targetSec%60).padStart(2,"0");
+      textEl.textContent=`${mm}:${ss} / ${tmm}:${tss}`;
+    } else {
+      textEl.textContent=`${mm}:${ss}`;
+    }
+  }
 }
 
 /* ── Boot ── */
