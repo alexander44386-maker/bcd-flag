@@ -997,6 +997,10 @@ function showDevPasswordModal(){
     if(input.value==="bcd1"){
       STATE.devMode=true;
       try{ localStorage.setItem("flagAtlasDevUnlocked","1"); }catch(e){}
+      const generalFrame=document.getElementById("generalFrame");
+      if(generalFrame) generalFrame.dataset.loaded="";
+      const rubikFrame=document.getElementById("rubikFrame");
+      if(rubikFrame) rubikFrame.dataset.loaded="";
       overlay.remove();
       showToast("🛠️ Developer mode unlocked!");
       render();
@@ -1080,6 +1084,7 @@ let STATE = {
   profile: null,
   pendingTimerProfile: null,
   timerManualValue: "",
+  timerSelectedMinutes: 10,
   sessionMinutes: null,
   sessionStartMs: null,
   timerActive: false,
@@ -1539,6 +1544,20 @@ function render(){
   if(STATE.view==="rubik") loadRubikFrame();
 }
 
+window.addEventListener("message", (e) => {
+  if (e.data === "exitGeneral") {
+    const frame = document.getElementById("generalFrame");
+    if (frame) frame.dataset.loaded = "";
+    STATE.view = "timeAsk";
+    render();
+  } else if (e.data === "exitRubik") {
+    const frame = document.getElementById("rubikFrame");
+    if (frame) frame.dataset.loaded = "";
+    STATE.view = "timeAsk";
+    render();
+  }
+});
+
 /* ================================================================
    GENERAL KNOWLEDGE — embeds the standalone "General Knowledge"
    365-day app (knowledge365.html) inside Flag Atlas as an iframe,
@@ -1546,11 +1565,6 @@ function render(){
 ================================================================ */
 function renderGeneralView(){
   return `<div class="general-view-wrap">
-    <div class="general-top-bar">
-      <button class="icon-btn" id="quitGeneral">◀</button>
-      <span class="general-top-title">📚 General Knowledge</span>
-      <span style="width:44px;flex-shrink:0"></span>
-    </div>
     <iframe id="generalFrame" class="general-frame" title="General Knowledge"></iframe>
   </div>`;
 }
@@ -1567,6 +1581,7 @@ function loadGeneralFrame(){
      own slot) — one shared profile system across the whole app. */
   const gkKey = (STATE.profile && STATE.profile!=="bren") ? `k365v3_${STATE.profile}` : "k365v3";
   html = html.replace("const LS_KEY = 'k365v3';", `const LS_KEY = ${JSON.stringify(gkKey)};`);
+  html = html.replace("let DEV_MODE = false;", `let DEV_MODE = ${STATE.devMode?"true":"false"};`);
 
   /* Match whichever font the player currently has selected. */
   const f = currentFont();
@@ -1583,11 +1598,6 @@ function loadGeneralFrame(){
 ================================================================ */
 function renderRubikView(){
   return `<div class="general-view-wrap">
-    <div class="general-top-bar">
-      <button class="icon-btn" id="quitRubik">◀</button>
-      <span class="general-top-title">🧩 Rubik's Cube</span>
-      <span style="width:44px;flex-shrink:0"></span>
-    </div>
     <iframe id="rubikFrame" class="general-frame" title="Rubik's Cube"></iframe>
   </div>`;
 }
@@ -1605,6 +1615,8 @@ function loadRubikFrame(){
   const suffix = (STATE.profile && STATE.profile!=="bren") ? `_${STATE.profile}` : "";
   html = html.replaceAll('"cube30-progress"', JSON.stringify(`cube30-progress${suffix}`));
   html = html.replaceAll('"cube30-splits"', JSON.stringify(`cube30-splits${suffix}`));
+  html = html.replaceAll('"cube30-bookmarks"', JSON.stringify(`cube30-bookmarks${suffix}`));
+  html = html.replace("let DEV_MODE = false;", `let DEV_MODE = ${STATE.devMode?"true":"false"};`);
 
   /* Match whichever font the player currently has selected. */
   const f = currentFont();
@@ -1625,6 +1637,7 @@ function loadRubikFrame(){
 ================================================================ */
 function renderTimeAsk(){
   const manual=STATE.timerManualValue||"";
+  const selMin=manual?null:(STATE.timerSelectedMinutes||10);
   return `<div class="aw-wrap">
     <div class="aw-content">
       <div class="aw-logo-row">
@@ -1637,8 +1650,8 @@ function renderTimeAsk(){
       <div class="time-ask-title">How many minutes will you play?</div>
       <div class="time-ask-sub">A little timer will float on screen so you know how long you've been playing 🌍</div>
       <div class="time-ask-row">
-        <button type="button" class="time-ask-chip" data-timepick="10">10 min</button>
-        <button type="button" class="time-ask-chip" data-timepick="15">15 min</button>
+        <button type="button" class="time-ask-chip${selMin===10?" selected":""}" data-timepick="10">10 min</button>
+        <button type="button" class="time-ask-chip${selMin===15?" selected":""}" data-timepick="15">15 min</button>
         <div class="time-ask-custom-inline" id="timeCustomWrap">
           <input type="number" min="1" max="180" id="timeManualInput" placeholder="Custom" value="${manual}">
           <span>min</span>
@@ -2630,6 +2643,8 @@ function bindEvents(){
     btn.addEventListener("click",()=>{
       document.querySelectorAll("[data-timepick]").forEach(b=>b.classList.remove("selected"));
       btn.classList.add("selected");
+      STATE.timerSelectedMinutes=parseInt(btn.dataset.timepick,10);
+      STATE.timerManualValue="";
       const manualInput=$("timeManualInput");
       const customWrap=$("timeCustomWrap");
       if(manualInput) manualInput.value="";
@@ -2641,12 +2656,14 @@ function bindEvents(){
     if(manualInput){
       manualInput.addEventListener("input",()=>{
         document.querySelectorAll("[data-timepick]").forEach(b=>b.classList.remove("selected"));
+        STATE.timerSelectedMinutes=null;
+        STATE.timerManualValue=manualInput.value;
         const customWrap=$("timeCustomWrap");
         if(customWrap) customWrap.classList.remove("invalid");
       });
     }
   }
-  on("learnFlagBtn","click",async()=>{
+  const readSelectedMinutes=()=>{
     const selectedChip=document.querySelector(".time-ask-chip.selected");
     const manualInput=$("timeManualInput");
     let minutes=null;
@@ -2659,18 +2676,31 @@ function bindEvents(){
       const customWrap=$("timeCustomWrap");
       if(customWrap) customWrap.classList.add("invalid");
       if(manualInput) manualInput.focus();
-      return;
+      return null;
     }
+    return minutes;
+  };
+  on("learnFlagBtn","click",async()=>{
+    const minutes=readSelectedMinutes();
+    if(minutes==null) return;
     await startTimedSession(minutes);
   });
-  on("learnGeneralBtn","click",()=>{ STATE.view="general"; render(); });
+  on("learnGeneralBtn","click",async()=>{
+    const minutes=readSelectedMinutes();
+    if(minutes==null) return;
+    await startTimedSessionForView(minutes,"general");
+  });
   on("quitGeneral","click",()=>{
     const frame=document.getElementById("generalFrame");
     if(frame) frame.dataset.loaded="";
     STATE.view="timeAsk";
     render();
   });
-  on("learnRubikBtn","click",()=>{ STATE.view="rubik"; render(); });
+  on("learnRubikBtn","click",async()=>{
+    const minutes=readSelectedMinutes();
+    if(minutes==null) return;
+    await startTimedSessionForView(minutes,"rubik");
+  });
   on("quitRubik","click",()=>{
     const frame=document.getElementById("rubikFrame");
     if(frame) frame.dataset.loaded="";
@@ -3069,6 +3099,17 @@ async function startTimedSession(minutes){
   await selectProfile(profileId);
   startFloatingTimer();
 }
+/* Same as startTimedSession, but for General Knowledge / Rubik's Cube,
+   which live in their own iframe and shouldn't be routed through
+   selectProfile()'s Flag-only "path" view. */
+async function startTimedSessionForView(minutes,view){
+  STATE.sessionMinutes=minutes;
+  STATE.sessionStartMs=Date.now();
+  STATE.timerActive=true;
+  STATE.view=view;
+  render();
+  startFloatingTimer();
+}
 function stopTimedSession(){
   STATE.timerActive=false;
   STATE.sessionMinutes=null;
@@ -3081,6 +3122,28 @@ function startFloatingTimer(){
   if(timerIntervalId) clearInterval(timerIntervalId);
   renderFloatingTimer();
   timerIntervalId=setInterval(renderFloatingTimer,1000);
+}
+/* Finds the button the floating timer should tuck itself next to, so it
+   never sits on top of a Home/Saved button. For native Flag Atlas screens
+   that's an element in this document; for General Knowledge and Rubik's
+   Cube (each their own iframe) we look inside the iframe's own document
+   and translate its rect into this document's coordinate space. */
+function findFloatingTimerAnchor(){
+  const frameId = STATE.view==="general" ? "generalFrame" : STATE.view==="rubik" ? "rubikFrame" : null;
+  if(frameId){
+    const frame=document.getElementById(frameId);
+    if(!frame) return null;
+    try{
+      const innerBtn=frame.contentDocument&&frame.contentDocument.querySelector(".fa-save-btn,.rc-save-btn");
+      if(!innerBtn) return null;
+      const frameRect=frame.getBoundingClientRect();
+      const innerRect=innerBtn.getBoundingClientRect();
+      return {top:frameRect.top+innerRect.top, left:frameRect.left+innerRect.left};
+    }catch(e){ return null; }
+  }
+  const savedAnchor=document.getElementById("openBookmarksBtn")||document.getElementById("saveBtn");
+  if(savedAnchor) return savedAnchor.getBoundingClientRect();
+  return null;
 }
 function renderFloatingTimer(){
   if(!STATE.timerActive||!STATE.sessionStartMs) return;
@@ -3096,11 +3159,10 @@ function renderFloatingTimer(){
       renderFloatingTimer();
     });
   }
-  const savedAnchor=document.getElementById("openBookmarksBtn")||document.getElementById("saveBtn");
-  if(savedAnchor){
-    const r=savedAnchor.getBoundingClientRect();
-    el.style.top=r.top+"px";
-    el.style.right=(window.innerWidth-r.left+8)+"px";
+  const anchor=findFloatingTimerAnchor();
+  if(anchor){
+    el.style.top=anchor.top+"px";
+    el.style.right=(window.innerWidth-anchor.left+8)+"px";
   } else {
     el.style.top="";
     el.style.right="";
@@ -3144,39 +3206,65 @@ function renderFloatingTimer(){
 <style>
   :root {
     --font-display:'Baloo 2',sans-serif; --font-body:'Nunito','Segoe UI',sans-serif;
-    --teal:    #06B6D4;
-    --teal-dk: #0891B2;
-    --teal-lt: #22D3EE;
-    --cream:   #F0F4FF;
-    --cream-dk:#D4DEFF;
-    --amber:   #FACC15;
-    --amber-lt:#FDE047;
-    --brick:   #F43F5E;
-    --brick-dk:#E11D48;
-    --maroon:  #9F1239;
-    --maroon-lt:#BE123C;
-    --bg:      #0D0F1A;
-    --surface: #141726;
-    --card:    #1A1F35;
-    --card-h:  #222840;
-    --border:  #2D3555;
-    --text:    #F0F4FF;
-    --muted:   #8B9DC3;
-    --faint:   #3D4E7A;
-    --violet:  #8B5CF6;
-    --violet-lt:#A78BFA;
-    --green:   #10B981;
-    --green-lt:#34D399;
+    /* ── palette copied from Rubik's Cube / Flag Atlas's shared design tokens ── */
+    --teal:    #1CB0F6;
+    --teal-dk: #0A91D6;
+    --teal-lt: #4CC3F8;
+    --cream:   #2D2640;
+    --cream-dk:#231D33;
+    --amber:   #FFC800;
+    --amber-lt:#FFD84D;
+    --brick:   #FF4B4B;
+    --brick-dk:#E62E2E;
+    --maroon:  #E62E2E;
+    --maroon-lt:#FF4B4B;
+    --bg:      #F4F0FF;
+    --surface: #FFFFFF;
+    --card:    #FFFFFF;
+    --card-h:  #F4F0FF;
+    --border:  #D8CEF0;
+    --text:    #2D2640;
+    --muted:   #6B5E8A;
+    --faint:   #9384B0;
+    --violet:  #7C3AED;
+    --violet-lt:#9D5CF5;
+    --green:   #58CC02;
+    --green-lt: #78D82D;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   body {
-    background: var(--bg);
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(124,58,237,0.08), transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, rgba(28,176,246,0.08), transparent 55%),
+      var(--bg);
     color: var(--text);
     font-family: var(--font-body);
     min-height: 100vh;
     overflow-x: hidden;
   }
+
+  /* ── HOME + TITLE — hardcoded to match Flag Atlas's own save-btn/h1 exactly ── */
+  .fa-header-badges{display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px}
+  .fa-home-btn{
+    display:flex;align-items:center;justify-content:center;gap:5px;
+    background:#7C3AED;border:2px solid #5B21B6;
+    box-shadow:0 3px 0 #5B21B6;border-radius:999px;padding:7px 14px;
+    font-family:'Nunito','Segoe UI',sans-serif;font-weight:800;font-size:12px;color:#fff;
+    flex-shrink:0;cursor:pointer;transition:transform .1s;min-width:74px;height:34px;
+  }
+  .fa-home-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #5B21B6}
+  .fa-save-btn{background:#FFC800;border-color:#C79200;box-shadow:0 3px 0 #C79200;color:#2D2640}
+  .fa-save-btn:active{box-shadow:0 1px 0 #C79200}
+  .topic-bookmark-btn{position:absolute;top:0;right:0;width:36px;height:36px;border-radius:50%;background:#fff;border:2px solid var(--border);box-shadow:0 3px 0 var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+  .topic-bookmark-btn.active{background:#FFF6D8;border-color:#F0B300;box-shadow:0 3px 0 #F0B300}
+  .saved-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13.5px;font-weight:600}
+  .saved-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid var(--border);border-radius:14px;margin-bottom:10px;cursor:pointer;background:var(--surface)}
+  .saved-row-info{flex:1;min-width:0}
+  .saved-row-title{font-weight:800;font-size:13.5px;color:var(--text)}
+  .saved-row-sub{font-size:11.5px;color:var(--muted);font-weight:600}
+  .saved-remove-btn{font-size:18px;background:none;border:none;cursor:pointer;flex-shrink:0;padding:4px;line-height:1}
+  .fa-h1{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:clamp(24px,7vw,32px);color:#2D2640;letter-spacing:-.01em;margin:0}
 
   /* ── HEADER ── */
   .header {
@@ -3192,7 +3280,7 @@ function renderFloatingTimer(){
     font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px;
     color: var(--violet-lt);
     display: flex; align-items: center; gap: 8px; white-space: nowrap;
-    text-shadow: 0 0 20px rgba(139,92,246,0.5);
+    text-shadow: 0 0 20px rgba(124,58,237,0.5);
   }
   .logo-sym { animation: pulse 3s ease-in-out infinite; display: inline-block; }
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(0.92)} }
@@ -3217,15 +3305,15 @@ function renderFloatingTimer(){
   .hbtn.danger:hover { border-color: var(--brick); color: var(--brick); }
   .hbtn.save-anim { border-color: var(--teal-lt); color: var(--teal-lt); }
   .hbtn.quickquiz {
-    background: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(6,182,212,0.18));
+    background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(28,176,246,0.18));
     border-color: var(--violet);
     color: var(--violet-lt);
   }
   .hbtn.quickquiz:hover {
-    background: linear-gradient(135deg, rgba(139,92,246,0.32), rgba(6,182,212,0.32));
+    background: linear-gradient(135deg, rgba(124,58,237,0.32), rgba(28,176,246,0.32));
     border-color: var(--violet-lt);
     color: #fff;
-    box-shadow: 0 0 14px rgba(139,92,246,0.35);
+    box-shadow: 0 0 14px rgba(124,58,237,0.35);
   }
 
   /* ── HERO ── */
@@ -3239,7 +3327,7 @@ function renderFloatingTimer(){
     content: '';
     position: absolute; top: 0; left: 50%; transform: translateX(-50%);
     width: 600px; height: 600px;
-    background: radial-gradient(ellipse at center, rgba(139,92,246,0.13) 0%, rgba(6,182,212,0.06) 45%, transparent 70%);
+    background: radial-gradient(ellipse at center, rgba(124,58,237,0.13) 0%, rgba(28,176,246,0.06) 45%, transparent 70%);
     pointer-events: none;
   }
   .hero-eyebrow {
@@ -3257,6 +3345,31 @@ function renderFloatingTimer(){
     font-size: 1rem; color: var(--muted); max-width: 420px; margin: 0 auto 28px;
     line-height: 1.7;
   }
+  .progress-row { display: flex; align-items: center; gap: 12px; margin: 4px auto 20px; }
+  .progress-track { flex: 1; height: 8px; background: var(--surface); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
+  .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--violet), var(--teal-lt)); transition: width 0.4s ease; }
+  .progress-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+
+  /* Quiz banner card — copied from Flag Match's dashboard card */
+  .quiz-banner {
+    max-width: 420px; margin: 0 auto 30px; border-radius: 20px; padding: 22px;
+    background: linear-gradient(135deg, var(--violet), var(--teal));
+    color: #fff; text-align: center; position: relative; overflow: hidden;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+  }
+  .quiz-banner::before {
+    content: '⚡'; position: absolute; top: 8px; right: 14px;
+    font-size: 46px; opacity: 0.18; line-height: 1;
+  }
+  .quiz-banner-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; font-family: var(--font-display); }
+  .quiz-banner-sub { font-size: 12.5px; opacity: 0.92; margin-bottom: 16px; font-weight: 700; }
+  .quiz-banner-btn {
+    background: #fff; color: var(--violet); border: none; border-radius: 12px;
+    padding: 11px 22px; font-family: var(--font-display); font-weight: 800;
+    font-size: 0.9rem; cursor: pointer; transition: all .18s;
+  }
+  .quiz-banner-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+  .quiz-banner-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .hero-stats {
     display: inline-flex; gap: 0;
     background: var(--surface); border: 1px solid var(--border);
@@ -3286,76 +3399,59 @@ function renderFloatingTimer(){
   .fchip:hover { border-color: var(--violet-lt); color: var(--violet-lt); }
   .fchip.active { background: var(--violet); color: #fff; border-color: var(--violet); }
 
-  /* ── GRID ── */
-  .grid-wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px 100px; }
-  .month-label {
-    font-size: 0.7rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
-    color: var(--faint); margin: 28px 0 10px; padding-left: 2px;
+  /* ── PHASES (months), copied from Rubik's / Flag Atlas's path view ── */
+  .grid-wrap { max-width: 760px; margin: 0 auto; padding: 0 18px 100px; }
+  .months-list { display: flex; flex-direction: column; gap: 26px; margin-top: 6px; }
+  .chapter-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+    background: var(--chap-color, var(--violet)); border-radius: 16px;
+    padding: 14px 18px; box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+    width: 100%; border: none; cursor: pointer;
   }
-  .cal-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 7px;
-  }
-  .day-cell {
-    aspect-ratio: 1;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    cursor: pointer; position: relative;
-    transition: all 0.18s; overflow: hidden;
-    gap: 3px;
-  }
-  .day-cell.locked {
-    background: rgba(13,15,26,0.7);
-    border-color: rgba(45,53,85,0.4);
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-  .day-cell.unlocked { background: var(--card); border-color: #2D3A6A; }
-  .day-cell.unlocked:hover {
-    background: var(--card-h); border-color: var(--violet-lt);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px var(--violet-lt), 0 0 16px rgba(139,92,246,0.25);
-  }
-  .day-cell.partial {
-    background: rgba(244,63,94,0.12);
-    border-color: var(--brick);
-    box-shadow: 0 0 10px rgba(244,63,94,0.2);
-  }
-  .day-cell.partial:hover { border-color: var(--brick); box-shadow: 0 0 18px rgba(244,63,94,0.35); transform: translateY(-2px); }
-  .day-cell.done {
-    background: rgba(250,204,21,0.08);
-    border-color: var(--amber);
-    box-shadow: 0 0 14px rgba(250,204,21,0.2);
-  }
-  .day-cell.done:hover { box-shadow: 0 0 24px rgba(250,204,21,0.35); transform: translateY(-2px); }
-  .day-cell.perfect {
-    background: rgba(6,182,212,0.12);
-    border-color: var(--teal-lt);
-    box-shadow: 0 0 14px rgba(6,182,212,0.3);
-  }
-  .day-cell.perfect:hover { box-shadow: 0 0 26px rgba(6,182,212,0.5); transform: translateY(-2px); }
+  .chapter-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #fff; flex-shrink: 0; }
+  .chapter-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -.01em; flex: 1; text-align: left; font-family: var(--font-display); }
+  .chapter-sub { font-size: 11.5px; color: rgba(255,255,255,0.88); font-weight: 700; white-space: nowrap; }
+  .chapter-arrow { color: rgba(255,255,255,0.85); font-size: 12px; transition: transform .18s; }
+  .chapter-header.collapsed .chapter-arrow { transform: rotate(-90deg); }
 
-  .dc-num {
-    font-size: 0.72rem; font-weight: 800; color: var(--faint);
-    line-height: 1;
+  .day-path { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 12px 6px; padding: 14px 4px 4px; }
+  .day-node {
+    aspect-ratio: 1; width: 100%; border-radius: 50%;
+    border: 2.5px solid var(--border); background: var(--surface);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; position: relative; transition: transform .12s, box-shadow .12s;
+    gap: 1px; padding: 2px; font-family: inherit;
   }
-  .day-cell.unlocked .dc-num,
-  .day-cell.partial .dc-num { color: var(--muted); }
-  .day-cell.done .dc-num { color: var(--amber); }
-  .day-cell.perfect .dc-num { color: var(--teal-lt); }
-  .dc-icon { font-size: 1.2rem; line-height: 1; }
+  .day-node:not(:disabled):active { transform: translateY(2px); }
+  .day-node.locked {
+    background: rgba(216,206,240,0.25); border-color: var(--border);
+    cursor: not-allowed; opacity: 0.55;
+  }
+  .day-node.unlocked { background: var(--card); border-color: var(--violet); }
+  .day-node.unlocked:hover {
+    background: var(--card-h); border-color: var(--violet-lt);
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.18);
+  }
+  .day-node.partial { background: rgba(255,75,75,0.1); border-color: var(--brick); }
+  .day-node.partial:hover { box-shadow: 0 0 0 3px rgba(255,75,75,0.18); }
+  .day-node.done { background: rgba(255,200,0,0.12); border-color: var(--amber); }
+  .day-node.done:hover { box-shadow: 0 0 0 3px rgba(255,200,0,0.22); }
+  .day-node.perfect { background: rgba(88,204,2,0.14); border-color: var(--green); }
+  .day-node.perfect:hover { box-shadow: 0 0 0 3px rgba(88,204,2,0.22); }
+
+  .dc-num { font-size: 0.66rem; font-weight: 800; color: var(--faint); line-height: 1; }
+  .day-node.unlocked .dc-num, .day-node.partial .dc-num { color: var(--violet); }
+  .day-node.done .dc-num { color: var(--amber-lt); }
+  .day-node.perfect .dc-num { color: var(--green); }
+  .dc-icon { font-size: 1.05rem; line-height: 1; }
   .dc-score {
-    font-size: 0.56rem; font-weight: 800; padding: 1px 5px;
-    border-radius: 8px; background: rgba(250,204,21,0.12); color: var(--amber);
-    letter-spacing: 0.5px;
+    position: absolute; bottom: -7px; font-size: 0.5rem; font-weight: 800; padding: 0px 5px;
+    border-radius: 8px; background: rgba(255,200,0,0.18); color: var(--amber-lt);
+    letter-spacing: 0.3px; white-space: nowrap;
   }
-  .day-cell.perfect .dc-score { background: rgba(6,182,212,0.15); color: var(--teal-lt); }
-  .day-cell.partial .dc-score { background: rgba(244,63,94,0.15); color: var(--brick); }
-  .dc-lock { font-size: 0.75rem; color: var(--faint); opacity: 0.5; }
+  .day-node.perfect .dc-score { background: rgba(88,204,2,0.2); color: var(--green); }
+  .day-node.partial .dc-score { background: rgba(255,75,75,0.18); color: var(--brick); }
+  .dc-lock { font-size: 0.7rem; color: var(--faint); opacity: 0.6; }
 
   /* ── MODAL BG ── */
   .modal-bg {
@@ -3376,7 +3472,7 @@ function renderFloatingTimer(){
     max-height: 92vh; overflow-y: auto;
     transform: translateY(18px) scale(0.98);
     transition: transform 0.25s;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(139,92,246,0.1);
+    box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,58,237,0.1);
   }
   .modal-bg.open .modal { transform: translateY(0) scale(1); }
 
@@ -3412,7 +3508,7 @@ function renderFloatingTimer(){
   }
   .modal-day-badge {
     font-size: 0.68rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
-    color: var(--violet-lt); background: rgba(139,92,246,0.12); border-radius: 7px;
+    color: var(--violet-lt); background: rgba(124,58,237,0.12); border-radius: 7px;
     padding: 3px 9px; margin-bottom: 6px; display: inline-block;
   }
   .modal-title {
@@ -3431,7 +3527,7 @@ function renderFloatingTimer(){
   .modal-icon { font-size: 3.2rem; text-align: center; padding: 16px 0 4px; }
 
   /* Topic panel */
-  .topic-panel { padding: 0 20px 20px; display: none; }
+  .topic-panel { padding: 0 20px 20px; display: none; position: relative; }
   .topic-panel.active { display: block; }
 
   .fact-box {
@@ -3459,12 +3555,12 @@ function renderFloatingTimer(){
     font-family: var(--font-display); font-size: 1rem; font-weight: 800;
     transition: all 0.18s;
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    box-shadow: 0 4px 20px rgba(139,92,246,0.3);
+    box-shadow: 0 4px 20px rgba(124,58,237,0.3);
   }
-  .quiz-cta:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); box-shadow: 0 6px 28px rgba(139,92,246,0.45); }
+  .quiz-cta:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); box-shadow: 0 6px 28px rgba(124,58,237,0.45); }
   .quiz-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
   .quiz-cta.retry { background: transparent; border: 1.5px solid var(--violet-lt); color: var(--violet-lt); box-shadow: none; }
-  .quiz-cta.retry:hover { background: rgba(139,92,246,0.12); }
+  .quiz-cta.retry:hover { background: rgba(124,58,237,0.12); }
 
   /* Quiz */
   .quiz-panel { padding: 0 20px 20px; display: none; }
@@ -3489,8 +3585,8 @@ function renderFloatingTimer(){
     display: flex; align-items: center; gap: 10px;
   }
   .opt:hover:not(:disabled) { border-color: var(--violet-lt); color: var(--cream); background: var(--card-h); }
-  .opt.correct { background: rgba(6,182,212,0.12); border-color: var(--teal-lt); color: var(--teal-lt); }
-  .opt.wrong { background: rgba(244,63,94,0.12); border-color: var(--brick); color: var(--brick); }
+  .opt.correct { background: rgba(28,176,246,0.12); border-color: var(--teal-lt); color: var(--teal-lt); }
+  .opt.wrong { background: rgba(255,75,75,0.12); border-color: var(--brick); color: var(--brick); }
   .opt:disabled { cursor: not-allowed; }
   .oletter {
     width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
@@ -3507,7 +3603,19 @@ function renderFloatingTimer(){
     font-family: 'Lora', serif; font-style: italic;
   }
   .fbbox.show { display: block; }
-  .fbbox.wrong-fb { border-left-color: var(--brick); }
+  .fbbox.correct-fb { background: rgba(88,204,2,0.12); border-left-color: var(--green); color: var(--cream); }
+  .fbbox.wrong-fb { background: rgba(255,75,75,0.1); border-left-color: var(--brick); color: var(--cream); }
+
+  /* Pip progress row — copied from Flag Match's per-question pips */
+  .qq-pips { display: flex; gap: 5px; flex: 1; justify-content: center; flex-wrap: wrap; }
+  .qq-pip { width: 18px; height: 8px; border-radius: 999px; background: var(--border); transition: background .3s; }
+  .qq-pip.done { background: var(--amber); }
+  .qq-pip.current { background: var(--violet-lt); }
+
+  /* Star rating — copied from Flag Match's result screen */
+  .qq-stars { display: flex; gap: 4px; justify-content: center; margin-bottom: 6px; }
+  .qq-star { font-size: 30px; }
+
 
   .nextbtn {
     width: 100%; padding: 12px;
@@ -3545,9 +3653,9 @@ function renderFloatingTimer(){
     flex: 2; padding: 12px; background: linear-gradient(135deg, var(--violet), var(--teal)); border: none;
     color: #fff; border-radius: 11px; cursor: pointer;
     font-family: var(--font-display); font-size: 0.88rem; font-weight: 800;
-    transition: all 0.18s; box-shadow: 0 4px 16px rgba(139,92,246,0.3);
+    transition: all 0.18s; box-shadow: 0 4px 16px rgba(124,58,237,0.3);
   }
-  .btn-pri:hover { filter: brightness(1.12); box-shadow: 0 6px 22px rgba(139,92,246,0.45); }
+  .btn-pri:hover { filter: brightness(1.12); box-shadow: 0 6px 22px rgba(124,58,237,0.45); }
 
   /* Legend */
   .legend {
@@ -3599,7 +3707,7 @@ function renderFloatingTimer(){
     font-size: 0.85rem; font-weight: 700;
     opacity: 0; transition: all 0.3s;
     pointer-events: none; z-index: 700; white-space: nowrap;
-    box-shadow: 0 8px 30px rgba(139,92,246,0.4);
+    box-shadow: 0 8px 30px rgba(124,58,237,0.4);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -3616,7 +3724,7 @@ function renderFloatingTimer(){
   }
 
   /* Touch interactions */
-  .day-cell, .opt, .hbtn, .fchip, .mtab, .quiz-cta, .nextbtn, .btn-pri, .btn-sec {
+  .day-node, .opt, .hbtn, .fchip, .mtab, .quiz-cta, .nextbtn, .btn-pri, .btn-sec {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
@@ -3651,8 +3759,8 @@ function renderFloatingTimer(){
 
     /* Grid */
     .grid-wrap { padding: 0 12px 80px; }
-    .cal-grid { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 5px; }
-    .day-cell { border-radius: 10px; }
+    .day-path { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 5px; }
+    .day-node { border-radius: 10px; }
     .dc-icon { font-size: 1rem; }
 
     /* Modal — slides up from bottom on mobile */
@@ -3687,7 +3795,7 @@ function renderFloatingTimer(){
 
   /* Extra small screens */
   @media (max-width: 380px) {
-    .cal-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 4px; }
+    .day-path { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 4px; }
     .hbtn { padding: 4px 7px; font-size: 0.66rem; }
     .hbtn.quickquiz { padding: 4px 7px !important; }
     .header-actions { gap: 4px; }
@@ -3696,46 +3804,46 @@ function renderFloatingTimer(){
 
   /* Tablet tweaks */
   @media (min-width: 601px) and (max-width: 900px) {
-    .cal-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
+    .day-path { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
     .header-pills { gap: 6px; }
   }
 </style>
 </head>
 <body>
 
-<!-- HEADER (branding lives in Flag Atlas's own top bar; this just holds the day pill + actions) -->
-<header class="header">
-  <div class="header-pills">
-    <div class="hpill">Day <b id="h-day">1</b>/365</div>
+<!-- HOME + TITLE — matches Flag Atlas's own header format exactly (no separate top bar) -->
+<div style="max-width:680px;margin:0 auto;padding:16px 20px 0;width:100%;box-sizing:border-box;">
+  <div class="fa-header-badges">
+    <button class="fa-home-btn fa-save-btn" id="openSavedBtn">🔖 Saved</button>
+    <button class="fa-home-btn" id="homeBtnGeneral">🏠 Home</button>
   </div>
-  <div class="header-actions">
-    <button class="hbtn quickquiz" onclick="openQuickQuiz()" style="padding:6px 16px;">⚡ Quick Quiz</button>
-    <button class="hbtn" onclick="saveProgress()" id="save-btn">💾 Save</button>
-    <button class="hbtn danger" onclick="confirmReset()">↺ Reset</button>
-  </div>
-</header>
+  <h1 class="fa-h1">📚 General Knowledge</h1>
+</div>
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-eyebrow">✦ 365 Days · 4 Topics · 6 Questions Each Day</div>
-  <h1 class="hero-title">Unlock the world's<br><em>greatest knowledge</em></h1>
-  <p class="hero-sub">Learn chemistry, IT, history, famous people & more — then prove it with a quick daily quiz.</p>
-  <div class="hero-stats">
-    <div class="hstat"><big id="hs-unlocked">1</big>Unlocked</div>
-    <div class="hstat"><big id="hs-done">0</big>Completed</div>
-    <div class="hstat"><big id="hs-topics">0</big>Topics Learned</div>
+  <div class="progress-row" style="max-width:420px;margin-left:auto;margin-right:auto;">
+    <div class="progress-track"><div class="progress-fill" id="overall-progress-fill" style="width:0%"></div></div>
   </div>
+  <div class="progress-label" id="overall-progress-label" style="display:block;text-align:center;margin-top:2px">Day 1 of 365</div>
 </div>
 
 <!-- SECTION LABEL -->
-<div class="section-label-row" style="max-width:1100px;margin:0 auto 20px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-  <div style="font-size:0.72rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--faint);">All 365 Days</div>
+<div class="section-label-row" style="max-width:760px;margin:0 auto 8px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--faint);">12 Monthly Phases</div>
 </div>
 
 
-<!-- GRID -->
+<!-- PHASES (one per month) -->
 <div class="grid-wrap">
-  <div class="cal-grid" id="cal-grid"></div>
+  <div class="months-list" id="months-list"></div>
+</div>
+
+<!-- QUIZ BANNER (Flag-Match-style entry point, unlocked topics only) -->
+<div class="quiz-banner" style="max-width:420px;margin-left:auto;margin-right:auto;">
+  <div class="quiz-banner-title">⚡ Knowledge Quiz</div>
+  <div class="quiz-banner-sub" id="quiz-banner-sub">5 random questions · multiple choice · from your unlocked topics</div>
+  <button class="quiz-banner-btn" id="quiz-banner-btn" onclick="openQuickQuiz()">▶ Start Quiz</button>
 </div>
 
 <!-- MODAL -->
@@ -3802,7 +3910,7 @@ function renderFloatingTimer(){
         <span class="qplabel">📝 Quick Quiz</span>
         <span class="qpscore" id="qq-scorelive">0/0</span>
       </div>
-      <div class="pbar"><div class="pfill" id="qq-fill" style="width:0%"></div></div>
+      <div class="qq-pips" id="qq-pips" style="margin-bottom:16px;"></div>
       <div class="qtext" id="qq-text"></div>
       <div class="opts" id="qq-opts"></div>
       <div class="fbbox" id="qq-fb"></div>
@@ -3810,6 +3918,7 @@ function renderFloatingTimer(){
     </div>
     <div class="result-panel" id="qq-result-panel">
       <div class="re-emoji" id="qq-re-emoji">🏆</div>
+      <div class="qq-stars" id="qq-re-stars"></div>
       <div class="re-title" id="qq-re-title">Perfect!</div>
       <div class="re-score" id="qq-re-score">Score: <strong>5/5</strong></div>
       <div class="re-msg" id="qq-re-msg"></div>
@@ -3818,6 +3927,21 @@ function renderFloatingTimer(){
         <button class="btn-pri" onclick="closeQuickQuiz()">✓ Done</button>
       </div>
     </div>
+  </div>
+</div>
+
+
+<!-- SAVED TOPICS MODAL -->
+<div class="modal-bg" id="saved-modal-bg" onclick="closeSavedBg(event)">
+  <div class="modal" id="saved-modal">
+    <div class="modal-dheader">
+      <div>
+        <div class="modal-day-badge">🔖 Saved</div>
+        <div style="font-size:0.8rem;color:var(--muted)" id="saved-count-sub">0 topics saved</div>
+      </div>
+      <button class="mclose" onclick="closeSavedModal()">✕</button>
+    </div>
+    <div id="saved-list" style="padding:0 20px 20px;"></div>
   </div>
 </div>
 
@@ -3948,9 +4072,10 @@ allDays = allDays.slice(0, 365);
 // STATE
 // ═══════════════════════════════════════════════════════════
 const LS_KEY = 'k365v3';
+let DEV_MODE = false;
 let state = loadState();
 
-function defaultState() { return { highestUnlocked: 1, completed: {} }; }
+function defaultState() { return { highestUnlocked: 1, completed: {}, bookmarks: {} }; }
 
 // One-time repair for saves created by an older version of this app, where a
 // day's quiz only ever recorded a single topic's completion entry instead of
@@ -3965,6 +4090,7 @@ function migrateState(s) {
   if (!s || typeof s !== 'object') return defaultState();
   if (typeof s.highestUnlocked !== 'number' || s.highestUnlocked < 1) s.highestUnlocked = 1;
   if (!s.completed || typeof s.completed !== 'object') s.completed = {};
+  if (!s.bookmarks || typeof s.bookmarks !== 'object') s.bookmarks = {};
 
   for (let d = 1; d < s.highestUnlocked; d++) {
     const dayDef = allDays[d - 1];
@@ -4018,7 +4144,7 @@ function doReset() {
 // ═══════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════
-function isUnlocked(d) { return d <= state.highestUnlocked; }
+function isUnlocked(d) { return DEV_MODE || d <= state.highestUnlocked; }
 function dayCompleted(d) {
   const c = state.completed[d];
   if (!c) return false;
@@ -4035,6 +4161,25 @@ function dayPartial(d) {
   return allDays[d - 1].topics.some((_, i) => c[i]) && !dayCompleted(d);
 }
 function topicDone(d, ti) { return !!(state.completed[d] && state.completed[d][ti]); }
+function bookmarkKey(d, ti) { return d + '-' + ti; }
+function isBookmarked(d, ti) { return !!(state.bookmarks && state.bookmarks[bookmarkKey(d, ti)]); }
+function toggleBookmark(d, ti) {
+  if (!state.bookmarks) state.bookmarks = {};
+  const key = bookmarkKey(d, ti);
+  if (state.bookmarks[key]) delete state.bookmarks[key];
+  else state.bookmarks[key] = { day: d, ti: ti, title: allDays[d - 1].topics[ti].title, icon: allDays[d - 1].topics[ti].icon };
+  saveState();
+  updateSavedBtn();
+}
+function bookmarkList() {
+  return Object.values(state.bookmarks || {}).sort((a, b) => a.day - b.day || a.ti - b.ti);
+}
+function updateSavedBtn() {
+  const btn = document.getElementById('openSavedBtn');
+  if (!btn) return;
+  const n = bookmarkList().length;
+  btn.textContent = n ? `🔖 Saved (${n})` : '🔖 Saved';
+}
 function topicPerfect(d, ti) {
   const r = state.completed[d]?.[ti];
   return r && r.score === r.max;
@@ -4053,16 +4198,10 @@ function dayScore(d) {
 // HEADER
 // ═══════════════════════════════════════════════════════════
 function updateHeader() {
-  document.getElementById('h-day').textContent = state.highestUnlocked;
-  const done = Object.keys(state.completed).filter(d => dayCompleted(+d)).length;
-  document.getElementById('hs-unlocked').textContent = state.highestUnlocked;
-  document.getElementById('hs-done').textContent = done;
-
-  let topicsLearned = 0;
-  Object.keys(state.completed).forEach(d => {
-    topicsLearned += Object.keys(state.completed[d]).length;
-  });
-  document.getElementById('hs-topics').textContent = topicsLearned;
+  let unlockedTopics = 0;
+  for (let d = 1; d <= state.highestUnlocked; d++) unlockedTopics += allDays[d - 1].topics.length;
+  const sub = document.getElementById('quiz-banner-sub');
+  if (sub) sub.textContent = `5 random questions · multiple choice · from your ${unlockedTopics} unlocked topic${unlockedTopics === 1 ? '' : 's'}`;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4072,63 +4211,109 @@ let activeFilter = 'all';
 function dayMatchesFilter(d) { return true; }
 
 // ═══════════════════════════════════════════════════════════
-// RENDER GRID
+// RENDER PHASES — one phase per calendar month (365 days ÷ 12
+// months), collapsible chapter headers + circular day-path nodes,
+// copied from Rubik's Cube / Flag Atlas's own path view.
 // ═══════════════════════════════════════════════════════════
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS_PER_MONTH = [31,28,31,30,31,30,31,31,30,31,30,31];
+const PHASE_COLORS = ['var(--violet)','var(--teal)','var(--brick)','var(--green)'];
+
+function buildMonthPhases() {
+  const months = [];
+  let dayCursor = 1;
+  for (let m = 0; m < 12; m++) {
+    const days = [];
+    for (let i = 0; i < DAYS_PER_MONTH[m] && dayCursor <= 365; i++) { days.push(dayCursor); dayCursor++; }
+    months.push({ id: m + 1, title: MONTHS[m], color: PHASE_COLORS[m % PHASE_COLORS.length], days });
+  }
+  return months;
+}
+const MONTH_PHASES = buildMonthPhases();
+
+// Lazily initialized so the default expand state can react to
+// wherever the player currently is (only that month starts open).
+let collapsedMonths = null;
+
+function toggleMonth(id) {
+  if (collapsedMonths.has(id)) collapsedMonths.delete(id);
+  else collapsedMonths.add(id);
+  renderGrid();
+}
 
 function renderGrid() {
-  const grid = document.getElementById('cal-grid');
-  grid.innerHTML = '';
-  let monthIdx = 0, daysInMonth = 0, monthShown = false;
-
-  for (let d = 1; d <= 365; d++) {
-    if (daysInMonth >= DAYS_PER_MONTH[monthIdx]) {
-      monthIdx = (monthIdx + 1) % 12;
-      daysInMonth = 0;
-      monthShown = false;
-    }
-    daysInMonth++;
-
-    if (!monthShown) {
-      const lbl = document.createElement('div');
-      lbl.className = 'month-label';
-      lbl.style.gridColumn = '1/-1';
-      lbl.textContent = MONTHS[monthIdx] + ' ✦';
-      grid.appendChild(lbl);
-      monthShown = true;
-    }
-
-    if (!dayMatchesFilter(d)) continue;
-
-    const unlocked = isUnlocked(d);
-    const done = dayCompleted(d);
-    const perfect = dayPerfect(d);
-    const partial = dayPartial(d);
-    const s = dayScore(d);
-    const topic0 = allDays[d - 1].topics[0];
-
-    let cls = 'day-cell';
-    if (perfect) cls += ' perfect';
-    else if (done) cls += ' done';
-    else if (partial) cls += ' partial';
-    else if (unlocked) cls += ' unlocked';
-    else cls += ' locked';
-
-    const cell = document.createElement('div');
-    cell.className = cls;
-    if (unlocked) cell.onclick = () => openDay(d);
-
-    let inner = `<span class="dc-num">${d}</span>`;
-    if (unlocked) {
-      inner += `<span class="dc-icon">${topic0.icon}</span>`;
-      if (s) inner += `<span class="dc-score">${s.score}/${s.max}</span>`;
-    } else {
-      inner += `<span class="dc-lock">🔒</span>`;
-    }
-    cell.innerHTML = inner;
-    grid.appendChild(cell);
+  if (!collapsedMonths) {
+    const current = MONTH_PHASES.find(mo => mo.days.includes(state.highestUnlocked)) || MONTH_PHASES[0];
+    collapsedMonths = new Set(MONTH_PHASES.filter(mo => mo.id !== current.id).map(mo => mo.id));
   }
+
+  const list = document.getElementById('months-list');
+  list.innerHTML = '';
+
+  MONTH_PHASES.forEach(month => {
+    const doneInMonth = month.days.filter(d => dayCompleted(d)).length;
+    const collapsed = collapsedMonths.has(month.id);
+
+    const section = document.createElement('div');
+
+    const header = document.createElement('button');
+    header.type = 'button';
+    header.className = 'chapter-header' + (collapsed ? ' collapsed' : '');
+    header.style.setProperty('--chap-color', month.color);
+    header.innerHTML = `<span class="chapter-dot"></span>
+      <span class="chapter-title">Phase ${month.id} · ${month.title}</span>
+      <span class="chapter-sub">${doneInMonth}/${month.days.length}</span>
+      <span class="chapter-arrow">▾</span>`;
+    header.onclick = () => toggleMonth(month.id);
+    section.appendChild(header);
+
+    if (!collapsed) {
+      const path = document.createElement('div');
+      path.className = 'day-path';
+      month.days.forEach(d => {
+        if (!dayMatchesFilter(d)) return;
+
+        const unlocked = isUnlocked(d);
+        const done = dayCompleted(d);
+        const perfect = dayPerfect(d);
+        const partial = dayPartial(d);
+        const s = dayScore(d);
+        const topic0 = allDays[d - 1].topics[0];
+
+        let cls = 'day-node';
+        if (perfect) cls += ' perfect';
+        else if (done) cls += ' done';
+        else if (partial) cls += ' partial';
+        else if (unlocked) cls += ' unlocked';
+        else cls += ' locked';
+
+        const node = document.createElement('button');
+        node.type = 'button';
+        node.className = cls;
+        node.disabled = !unlocked;
+        if (unlocked) node.onclick = () => openDay(d);
+
+        let inner = `<span class="dc-num">${d}</span>`;
+        if (unlocked) {
+          inner += `<span class="dc-icon">${topic0.icon}</span>`;
+          if (s) inner += `<span class="dc-score">${s.score}/${s.max}</span>`;
+        } else {
+          inner += `<span class="dc-lock">🔒</span>`;
+        }
+        node.innerHTML = inner;
+        path.appendChild(node);
+      });
+      section.appendChild(path);
+    }
+
+    list.appendChild(section);
+  });
+
+  const unlockedDay = Math.min(state.highestUnlocked, 365);
+  const fill = document.getElementById('overall-progress-fill');
+  const label = document.getElementById('overall-progress-label');
+  if (fill) fill.style.width = ((unlockedDay - 1) / 365 * 100) + '%';
+  if (label) label.textContent = `Day ${unlockedDay} of 365`;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4198,6 +4383,7 @@ function showTopicPanel(ti) {
   content.innerHTML = `
     <div class="modal-icon">${t.icon}</div>
     <div class="topic-panel active" id="topic-panel-${ti}">
+      <button type="button" class="topic-bookmark-btn${isBookmarked(activeDay, ti) ? ' active' : ''}" id="topicBookmarkBtn" title="${isBookmarked(activeDay, ti) ? 'Remove bookmark' : 'Bookmark this topic'}">${isBookmarked(activeDay, ti) ? '⭐' : '☆'}</button>
       <div class="fact-box">${t.fact}</div>
       <div class="kp-head">Key Points</div>
       <div class="kp-list">${t.kps.map(k => `<div class="kp-item"><span class="kp-dot">◆</span>${k}</div>`).join('')}</div>
@@ -4212,6 +4398,13 @@ function showTopicPanel(ti) {
   document.getElementById('quiz-panel').style.display = 'none';
   document.getElementById('result-panel').style.display = 'none';
   document.getElementById('result-panel').classList.remove('show');
+
+  const bmBtn = document.getElementById('topicBookmarkBtn');
+  if (bmBtn) bmBtn.addEventListener('click', () => {
+    toggleBookmark(activeDay, ti);
+    showTopicPanel(ti);
+    showToast(isBookmarked(activeDay, ti) ? '⭐ Bookmarked!' : 'Bookmark removed');
+  });
 }
 
 function closeModal() {
@@ -4428,7 +4621,10 @@ function qqRenderQ() {
   const { qs, cur, score } = qqState;
   const total = qs.length;
   document.getElementById('qq-scorelive').textContent = `${score}/${cur}`;
-  document.getElementById('qq-fill').style.width = `${(cur / total) * 100}%`;
+  document.getElementById('qq-pips').innerHTML = qs.map((_, i) => {
+    const cls = i < cur ? 'done' : (i === cur ? 'current' : '');
+    return `<div class="qq-pip${cls ? ' ' + cls : ''}"></div>`;
+  }).join('');
 
   const q = qs[cur];
   const topicLabel = q._title.replace(/^IT Acronyms:\s*/i, '');
@@ -4465,9 +4661,10 @@ function qqAnswerQ(chosen) {
 
   const fb = document.getElementById('qq-fb');
   fb.textContent = (correct ? '✓ Correct! ' : '✗ Not quite. ') + q.e;
-  fb.className = 'fbbox show' + (!correct ? ' wrong-fb' : '');
+  fb.className = 'fbbox show ' + (correct ? 'correct-fb' : 'wrong-fb');
 
   document.getElementById('qq-scorelive').textContent = `${qqState.score}/${qqState.cur + 1}`;
+  document.getElementById('qq-pips').children[qqState.cur]?.classList.add('done');
   document.getElementById('qq-next').className = 'nextbtn show';
 }
 
@@ -4480,26 +4677,82 @@ function qqNextQ() {
 function qqShowResult() {
   const { score, qs } = qqState;
   const max = qs.length;
-  const pct = score / max;
+  const pct = max ? Math.round((score / max) * 100) : 0;
+  const tier = pct === 100 ? 100 : pct >= 75 ? 75 : pct >= 50 ? 50 : 0;
 
   document.getElementById('qq-panel').style.display = 'none';
   const rp = document.getElementById('qq-result-panel');
   rp.style.display = 'block';
   rp.classList.add('show');
 
-  let emoji, title;
-  if (pct === 1)       { emoji = '🏆'; title = 'Perfect Score!'; }
-  else if (pct >= 0.6) { emoji = '👍'; title = 'Well Done!'; }
-  else if (pct >= 0.4) { emoji = '📚'; title = 'Keep Studying!'; }
-  else                 { emoji = '💪'; title = 'Keep Going!'; }
+  const emojis = { 100: '🏆', 75: '👍', 50: '📚', 0: '💪' };
+  const titles = { 100: 'Perfect Score!', 75: 'Well Done!', 50: 'Keep Studying!', 0: 'Keep Going!' };
+  const colors = { 100: '#7C3AED', 75: '#58CC02', 50: '#FFC800', 0: '#FF4B4B' };
+  const starsFilled = tier === 100 ? 3 : tier >= 75 ? 2 : tier >= 50 ? 1 : 0;
 
-  document.getElementById('qq-re-emoji').textContent = emoji;
-  document.getElementById('qq-re-title').textContent = title;
+  document.getElementById('qq-re-emoji').textContent = emojis[tier];
+  document.getElementById('qq-re-stars').innerHTML = [0, 1, 2].map(i =>
+    `<span class="qq-star" style="opacity:${i < starsFilled ? 1 : 0.2}">⭐</span>`
+  ).join('');
+  document.getElementById('qq-re-title').textContent = titles[tier];
+  document.getElementById('qq-re-title').style.color = colors[tier];
   document.getElementById('qq-re-score').innerHTML = `Score: <strong>${score}/${max}</strong>`;
   document.getElementById('qq-re-msg').textContent = 'Quick quiz complete! Open a day to learn more. 🎯';
 }
 
+function openSavedModal() {
+  renderSavedList();
+  document.getElementById('saved-modal-bg').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSavedModal() {
+  document.getElementById('saved-modal-bg').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeSavedBg(e) {
+  if (e.target === document.getElementById('saved-modal-bg')) closeSavedModal();
+}
+function renderSavedList() {
+  const list = bookmarkList();
+  document.getElementById('saved-count-sub').textContent = `${list.length} topic${list.length === 1 ? '' : 's'} saved`;
+  const el = document.getElementById('saved-list');
+  el.innerHTML = list.length
+    ? list.map(b => `<div class="saved-row" data-openday="${b.day}" data-openti="${b.ti}">
+        <span style="font-size:20px">${b.icon}</span>
+        <div class="saved-row-info">
+          <div class="saved-row-title">${b.title}</div>
+          <div class="saved-row-sub">Day ${b.day}</div>
+        </div>
+        <button type="button" class="saved-remove-btn" data-unsave="${bookmarkKey(b.day, b.ti)}" title="Remove bookmark">⭐</button>
+      </div>`).join('')
+    : `<div class="saved-empty">🔖 No saved topics yet.<br>Tap the ☆ on any topic to save it here.</div>`;
+
+  el.querySelectorAll('[data-openday]').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('[data-unsave]')) return;
+      const d = parseInt(row.dataset.openday, 10);
+      const ti = parseInt(row.dataset.openti, 10);
+      closeSavedModal();
+      openDay(d);
+      switchTab(ti);
+    });
+  });
+  el.querySelectorAll('[data-unsave]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const [d, ti] = btn.dataset.unsave.split('-').map(Number);
+      toggleBookmark(d, ti);
+      renderSavedList();
+    });
+  });
+}
+
 setInterval(saveState, 60000);
+document.getElementById('homeBtnGeneral').addEventListener('click', () => {
+  try { window.parent.postMessage('exitGeneral', '*'); } catch (e) {}
+});
+document.getElementById('openSavedBtn').addEventListener('click', openSavedModal);
+updateSavedBtn();
 <\/script>
 </body>
 </html>
@@ -4562,13 +4815,32 @@ setInterval(saveState, 60000);
   h1,h2,h3{font-family:var(--font-display); margin:0;}
   .mono{font-family:'JetBrains Mono', monospace;}
 
-  /* header */
+  /* header — copies Flag Atlas's own header format: Home button above the title */
+  .rc-header-badges{display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px}
+  .rc-home-btn{
+    display:flex;align-items:center;justify-content:center;gap:5px;
+    background:var(--accent1);border:2px solid var(--accent1-dark);
+    box-shadow:0 3px 0 var(--accent1-dark);border-radius:999px;padding:7px 14px;
+    font-family:var(--font-body);font-weight:800;font-size:12px;color:#fff;
+    flex-shrink:0;cursor:pointer;transition:transform .1s;min-width:74px;height:34px;
+  }
+  .rc-home-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--accent1-dark)}
+  .rc-save-btn{background:var(--yellow);border-color:var(--yellow-dk,#C79200);box-shadow:0 3px 0 var(--yellow-dk,#C79200);color:#2D2640}
+  .rc-save-btn:active{box-shadow:0 1px 0 var(--yellow-dk,#C79200)}
+  .rc-bookmark-btn{position:absolute;top:0;right:0;width:36px;height:36px;border-radius:50%;background:#fff;border:2px solid var(--border,#D9D9D9);box-shadow:0 3px 0 var(--border,#D9D9D9);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+  .rc-bookmark-btn.active{background:#FFF6D8;border-color:#F0B300;box-shadow:0 3px 0 #F0B300}
+  .rc-saved-empty{text-align:center;padding:40px 20px;color:var(--muted,#6B5E8A);font-size:13.5px;font-weight:600}
+  .rc-saved-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid var(--border,#D9D9D9);border-radius:14px;margin-bottom:10px;cursor:pointer;background:#fff}
+  .rc-saved-row-info{flex:1;min-width:0}
+  .rc-saved-row-title{font-weight:800;font-size:13.5px}
+  .rc-saved-row-sub{font-size:11.5px;color:var(--muted,#6B5E8A);font-weight:600}
+  .rc-saved-remove-btn{font-size:18px;background:none;border:none;cursor:pointer;flex-shrink:0;padding:4px;line-height:1}
   .eyebrow{
     font-family:'JetBrains Mono', monospace;
     font-size:12px; letter-spacing:0.14em; text-transform:uppercase;
     color:var(--red); margin-bottom:10px; font-weight:700;
   }
-  .title{font-size:34px; line-height:1.1; font-weight:700;}
+  .title{font-size:clamp(24px,7vw,32px); line-height:1.1; font-weight:800; letter-spacing:-.01em;}
   .subtitle{color:var(--mute); font-size:15px; margin-top:10px; max-width:52ch; line-height:1.5;}
 
   /* progress bar */
@@ -5219,6 +5491,7 @@ const PHASES = [
   }
 ];
 const TOTAL_DAYS = PHASES.reduce((n, p) => n + p.days.length, 0);
+let DEV_MODE = false;
 function buildAlgBank() {
   const bank = [];
   const seen = /* @__PURE__ */ new Set();
@@ -5396,8 +5669,8 @@ function DayNode({ day, color, done, current, locked, onOpen }) {
     /* @__PURE__ */ React.createElement("span", { className: "day-num", style: { color: numColor } }, icon)
   )), /* @__PURE__ */ React.createElement("span", { className: "day-caption" }, day.title));
 }
-function DayDetail({ day, color, done, onToggle, onBack }) {
-  return /* @__PURE__ */ React.createElement("div", { className: "lesson-wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: onBack }, "\u25C0"), /* @__PURE__ */ React.createElement("div", { style: { width: 44 } })), /* @__PURE__ */ React.createElement("p", { className: "lesson-eyebrow" }, "Day ", day.day), /* @__PURE__ */ React.createElement("div", { className: "stamp-card", style: { "--phase-color": color } }, /* @__PURE__ */ React.createElement("h3", { className: "stamp-name" }, day.title), /* @__PURE__ */ React.createElement("p", { className: "stamp-fact" }, day.blurb), /* @__PURE__ */ React.createElement("div", { className: "stamp-divider" }), /* @__PURE__ */ React.createElement("div", { className: "day-section-label" }, "Today"), /* @__PURE__ */ React.createElement("ul", { className: "task-list" }, day.tasks.map((t, i) => /* @__PURE__ */ React.createElement("li", { key: i }, t))), day.algs.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "day-section-label" }, "Algorithms"), /* @__PURE__ */ React.createElement("div", { className: "algs" }, day.algs.map((a, i) => /* @__PURE__ */ React.createElement("div", { className: "alg-row", key: i }, /* @__PURE__ */ React.createElement("span", { className: "alg-name" }, a.name), /* @__PURE__ */ React.createElement("span", { className: "alg-moves mono" }, a.moves))))), day.mistake && /* @__PURE__ */ React.createElement("div", { className: "mistake-card" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("b", null, "\u274C Avoid:"), " ", day.mistake.wrong), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 6 } }, /* @__PURE__ */ React.createElement("span", { className: "right" }, "\u2705 Instead:"), " ", day.mistake.right))), /* @__PURE__ */ React.createElement("div", { className: "dock-bar" }, /* @__PURE__ */ React.createElement("button", { className: "btn " + (done ? "btn-secondary" : "btn-primary"), onClick: onToggle }, done ? "\u21A9\uFE0F Mark Incomplete" : "\u2705 Mark Day Complete")));
+function DayDetail({ day, color, done, bookmarked, onToggle, onToggleBookmark, onBack }) {
+  return /* @__PURE__ */ React.createElement("div", { className: "lesson-wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: onBack }, "\u25C0"), /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: onToggleBookmark, title: bookmarked ? "Remove bookmark" : "Bookmark this day" }, bookmarked ? "\u2B50" : "\u2606")), /* @__PURE__ */ React.createElement("p", { className: "lesson-eyebrow" }, "Day ", day.day), /* @__PURE__ */ React.createElement("div", { className: "stamp-card", style: { "--phase-color": color } }, /* @__PURE__ */ React.createElement("h3", { className: "stamp-name" }, day.title), /* @__PURE__ */ React.createElement("p", { className: "stamp-fact" }, day.blurb), /* @__PURE__ */ React.createElement("div", { className: "stamp-divider" }), /* @__PURE__ */ React.createElement("div", { className: "day-section-label" }, "Today"), /* @__PURE__ */ React.createElement("ul", { className: "task-list" }, day.tasks.map((t, i) => /* @__PURE__ */ React.createElement("li", { key: i }, t))), day.algs.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "day-section-label" }, "Algorithms"), /* @__PURE__ */ React.createElement("div", { className: "algs" }, day.algs.map((a, i) => /* @__PURE__ */ React.createElement("div", { className: "alg-row", key: i }, /* @__PURE__ */ React.createElement("span", { className: "alg-name" }, a.name), /* @__PURE__ */ React.createElement("span", { className: "alg-moves mono" }, a.moves))))), day.mistake && /* @__PURE__ */ React.createElement("div", { className: "mistake-card" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("b", null, "\u274C Avoid:"), " ", day.mistake.wrong), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 6 } }, /* @__PURE__ */ React.createElement("span", { className: "right" }, "\u2705 Instead:"), " ", day.mistake.right))), /* @__PURE__ */ React.createElement("div", { className: "dock-bar" }, /* @__PURE__ */ React.createElement("button", { className: "btn " + (done ? "btn-secondary" : "btn-primary"), onClick: onToggle }, done ? "\u21A9\uFE0F Mark Incomplete" : "\u2705 Mark Day Complete")));
 }
 function makeQuestion(pool, direction) {
   const correct = pool[Math.floor(Math.random() * pool.length)];
@@ -5468,6 +5741,14 @@ function Quiz() {
     );
   })));
 }
+function SavedList({ bookmarks, onOpen, onRemove, onBack }) {
+  const days = Object.keys(bookmarks).filter((k) => bookmarks[k]).map(Number).sort((a, b) => a - b);
+  return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: onBack }, "\u25C0"), /* @__PURE__ */ React.createElement("p", { style: { flex: 1, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, margin: 0 } }, "\u{1F516} Saved"), /* @__PURE__ */ React.createElement("div", { style: { width: 44 } })), days.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "rc-saved-empty" }, "\u{1F516} No saved days yet.", /* @__PURE__ */ React.createElement("br", null), "Tap the \u2606 on any day to save it here.") : days.map((dayNum) => {
+    const phase = PHASES.find((p) => p.days.some((d) => d.day === dayNum));
+    const day = phase.days.find((d) => d.day === dayNum);
+    return /* @__PURE__ */ React.createElement("div", { className: "rc-saved-row", key: dayNum, onClick: () => onOpen(dayNum) }, /* @__PURE__ */ React.createElement("div", { className: "rc-saved-row-info" }, /* @__PURE__ */ React.createElement("div", { className: "rc-saved-row-title" }, day.title), /* @__PURE__ */ React.createElement("div", { className: "rc-saved-row-sub" }, "Day ", dayNum)), /* @__PURE__ */ React.createElement("button", { type: "button", className: "rc-saved-remove-btn", title: "Remove bookmark", onClick: (e) => { e.stopPropagation(); onRemove(dayNum); } }, "\u2B50"));
+  }));
+}
 function App() {
   const [progress, setProgress] = useState(() => {
     try {
@@ -5485,6 +5766,23 @@ function App() {
       return { cross: [], f2l: [], full: [] };
     }
   });
+  const [bookmarks, setBookmarks] = useState(() => {
+    try {
+      const raw = localStorage.getItem("cube30-bookmarks");
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("cube30-bookmarks", JSON.stringify(bookmarks));
+    } catch (e) {
+    }
+  }, [bookmarks]);
+  const toggleBookmark = (dayNum) => {
+    setBookmarks((b) => ({ ...b, [dayNum]: !b[dayNum] }));
+  };
   useEffect(() => {
     try {
       localStorage.setItem("cube30-progress", JSON.stringify(progress));
@@ -5513,17 +5811,20 @@ function App() {
     setCollapsedPhases((c) => c.includes(id) ? c.filter((x) => x !== id) : [...c, id]);
   };
   const completedCount = Object.values(progress).filter(Boolean).length;
-  const pct = Math.round(completedCount / TOTAL_DAYS * 100);
   let unlockedDay = 1;
   for (let n = 1; n <= TOTAL_DAYS; n++) {
     if (progress[n]) unlockedDay = n + 1;
   }
   unlockedDay = Math.min(unlockedDay, TOTAL_DAYS);
+  const pct = Math.round((unlockedDay - 1) / TOTAL_DAYS * 100);
   if (page === "quiz") {
     return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: () => setPage("home") }, "\u2715"), /* @__PURE__ */ React.createElement("div", { style: { width: 44 } })), /* @__PURE__ */ React.createElement(Quiz, null));
   }
   if (page === "timer") {
     return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: () => setPage("home") }, "\u2715"), /* @__PURE__ */ React.createElement("p", { style: { flex: 1, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, margin: 0 } }, "\u23F1\uFE0F Timer"), /* @__PURE__ */ React.createElement("div", { style: { width: 44 } })), /* @__PURE__ */ React.createElement(TimerPanel, { splits, onRecord: recordSplit, onClear: clearSplit }));
+  }
+  if (page === "saved") {
+    return /* @__PURE__ */ React.createElement(SavedList, { bookmarks, onOpen: (n) => { setPage("home"); setSelectedDayNum(n); }, onRemove: toggleBookmark, onBack: () => setPage("home") });
   }
   if (selectedDayNum) {
     const phase = PHASES.find((p) => p.days.some((d) => d.day === selectedDayNum));
@@ -5534,12 +5835,14 @@ function App() {
         day,
         color: phase.color,
         done: !!progress[day.day],
+        bookmarked: !!bookmarks[day.day],
         onToggle: () => toggleDay(day.day),
+        onToggleBookmark: () => toggleBookmark(day.day),
         onBack: () => setSelectedDayNum(null)
       }
     ));
   }
-  return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "eyebrow" }, "30-Day Path"), /* @__PURE__ */ React.createElement("h1", { className: "title" }, "30-Day CFOP Bootcamp"), /* @__PURE__ */ React.createElement("p", { className: "subtitle" }, "A day-by-day path from cube notation to a full CFOP solve \u2014 cross, F2L, OLL, and PLL, one layer of skill at a time. Most learners finish the 30 days somewhere around 25\u201345 seconds; sub-20 is a great next milestone once these fundamentals are solid. Log splits below to unlock each checkpoint."), /* @__PURE__ */ React.createElement("div", { className: "progress-row" }, /* @__PURE__ */ React.createElement("div", { className: "progress-track" }, /* @__PURE__ */ React.createElement("div", { className: "progress-fill", style: { width: pct + "%" } })), /* @__PURE__ */ React.createElement("div", { className: "progress-label" }, completedCount, " / ", TOTAL_DAYS, " days")), /* @__PURE__ */ React.createElement("div", { className: "continent-list" }, PHASES.map((phase) => {
+  return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "rc-header-badges" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "rc-home-btn rc-save-btn", onClick: () => setPage("saved") }, "\u{1F516} Saved", Object.values(bookmarks).filter(Boolean).length ? ` (${Object.values(bookmarks).filter(Boolean).length})` : ""), /* @__PURE__ */ React.createElement("button", { type: "button", className: "rc-home-btn", onClick: () => { try { window.parent.postMessage("exitRubik", "*"); } catch (e) {} } }, "\u{1F3E0} Home")), /* @__PURE__ */ React.createElement("h1", { className: "title" }, "\u{1F9E9} Rubik's Cube"), /* @__PURE__ */ React.createElement("div", { className: "progress-row" }, /* @__PURE__ */ React.createElement("div", { className: "progress-track" }, /* @__PURE__ */ React.createElement("div", { className: "progress-fill", style: { width: pct + "%" } })), /* @__PURE__ */ React.createElement("div", { className: "progress-label" }, "Day ", unlockedDay, " of ", TOTAL_DAYS)), /* @__PURE__ */ React.createElement("div", { className: "continent-list" }, PHASES.map((phase) => {
     const collapsed = collapsedPhases.includes(phase.id);
     const doneInPhase = phase.days.filter((d) => progress[d.day]).length;
     return /* @__PURE__ */ React.createElement(React.Fragment, { key: phase.id }, phase.gate && /* @__PURE__ */ React.createElement(Checkpoint, { gate: phase.gate, splits }), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement(
@@ -5562,7 +5865,7 @@ function App() {
         color: phase.color,
         done: !!progress[day.day],
         current: day.day === unlockedDay && !progress[day.day],
-        locked: day.day > unlockedDay,
+        locked: !DEV_MODE && day.day > unlockedDay,
         onOpen: (n) => setSelectedDayNum(n)
       }
     )))));
