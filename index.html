@@ -681,20 +681,14 @@ DAYS.forEach(d=>{ d.countries.forEach(c=>{ COUNTRY_CONTINENT[c.name]=d.continent
 
 /* ================================================================
    PLAYER PROFILE
-   BREN keeps the original continent-grouped path and inherits the
-   pre-existing save data. There's just this one profile now, so
-   there's no "who's playing?" screen — the app goes straight into
-   the start screen (time + subject picker) and loads Bren's save.
+   There's just one player — Bren — so there's no "who's playing?"
+   screen; the app goes straight into the start screen (time +
+   subject picker) and loads Bren's save the first time Flags is
+   opened.
 ================================================================ */
 
-/* Which day-path & continent-chapter data the profile uses. */
-function pathDataFor(profileId){
-  return {days:DAYS, continents:CONTINENTS};
-}
-
-/* Active path data for whichever profile is currently signed in.
-   Defaults to the original continent-grouped path until a profile
-   is chosen. */
+/* Active path data. Flag Atlas has always used the same
+   continent-grouped path, so this is just DAYS/CONTINENTS as-is. */
 let ACTIVE_DAYS = DAYS;
 let ACTIVE_CONTINENTS = CONTINENTS;
 
@@ -795,15 +789,13 @@ const SAVE_KEY_BASE = "flagatlas_save_v1";
    See the README for the 5-minute setup steps. */
 const FIREBASE_DB_URL = "https://flag-atlas-6e9b2-default-rtdb.firebaseio.com/";
 
-/* BREN keeps the original save slot (so existing progress carries
-   over). Every other profile gets its own separate slot. */
-function saveKeyFor(profileId){
-  return profileId==="bren" ? SAVE_KEY_BASE : `${SAVE_KEY_BASE}_${profileId}`;
+/* One player, one save slot. */
+function saveKeyFor(){
+  return SAVE_KEY_BASE;
 }
-function cloudSaveUrlFor(profileId){
-  const slot = profileId==="bren" ? "save" : `save_${profileId}`;
+function cloudSaveUrlFor(){
   const base = FIREBASE_DB_URL.replace(/\/+$/,""); // strip trailing slash(es) to avoid a double-slash URL
-  return `${base}/${slot}.json`;
+  return `${base}/save.json`;
 }
 
 /* Shared shape of everything that gets persisted, used by both the
@@ -829,13 +821,13 @@ function buildSaveData(){
    changes (like bookmarking) that shouldn't trigger a cloud sync on
    their own; the next explicit "Save" tap will push them to Firebase. */
 function saveLocalOnly(){
-  const SAVE_KEY = saveKeyFor(STATE.profile);
+  const SAVE_KEY = saveKeyFor();
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(buildSaveData())); }catch(e){}
 }
 
 async function saveState(){
-  const SAVE_KEY = saveKeyFor(STATE.profile);
-  const CLOUD_SAVE_URL = cloudSaveUrlFor(STATE.profile);
+  const SAVE_KEY = saveKeyFor();
+  const CLOUD_SAVE_URL = cloudSaveUrlFor();
   const toSave=buildSaveData();
   // Always keep a local copy so the game still works offline.
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(toSave)); }catch(e){}
@@ -872,11 +864,10 @@ function toggleBookmark(name){
   saveLocalOnly();
 }
 
-async function loadState(profileId){
-  const SAVE_KEY = saveKeyFor(profileId);
-  const CLOUD_SAVE_URL = cloudSaveUrlFor(profileId);
-  // Reset in-memory state first so switching profiles never leaks
-  // progress from whoever played before.
+async function loadState(){
+  const SAVE_KEY = saveKeyFor();
+  const CLOUD_SAVE_URL = cloudSaveUrlFor();
+  // Reset in-memory state first so a reload never leaks stale data.
   STATE.unlockedDay=1;
   STATE.completedDays=[];
   STATE.streak=0;
@@ -1120,8 +1111,7 @@ function showContinentFilterModal(onStart){
    STATE
 ================================================================ */
 let STATE = {
-  profile: null,
-  pendingTimerProfile: null,
+  flagSaveReady: false,
   timerManualValue: "",
   timerSelectedMinutes: 10,
   sessionMinutes: null,
@@ -1614,12 +1604,7 @@ function loadGeneralFrame(){
   const closeTag="</scr"+"ipt>";
   let html=src.textContent.replace(/<\\\/script>/g,closeTag);
 
-  /* Give this player their own General Knowledge save, using the same
-     pattern as the main Flag Atlas save (BREN keeps the original key
-     so existing progress carries over; every other profile gets its
-     own slot) — one shared profile system across the whole app. */
-  const gkKey = (STATE.profile && STATE.profile!=="bren") ? `k365v3_${STATE.profile}` : "k365v3";
-  html = html.replace("const LS_KEY = 'k365v3';", `const LS_KEY = ${JSON.stringify(gkKey)};`);
+  /* General Knowledge keeps its own localStorage key, same as always. */
   html = html.replace("let DEV_MODE = false;", `let DEV_MODE = ${STATE.devMode?"true":"false"};`);
 
   /* Match whichever font the player currently has selected. */
@@ -1647,14 +1632,7 @@ function loadRubikFrame(){
   const closeTag="</scr"+"ipt>";
   let html=src.textContent.replace(/<\\\/script>/g,closeTag);
 
-  /* Give this player their own speedcubing save — same profile
-     pattern used everywhere else (BREN keeps the original keys so
-     existing progress carries over; every other profile gets its
-     own slot). */
-  const suffix = (STATE.profile && STATE.profile!=="bren") ? `_${STATE.profile}` : "";
-  html = html.replaceAll('"cube30-progress"', JSON.stringify(`cube30-progress${suffix}`));
-  html = html.replaceAll('"cube30-splits"', JSON.stringify(`cube30-splits${suffix}`));
-  html = html.replaceAll('"cube30-bookmarks"', JSON.stringify(`cube30-bookmarks${suffix}`));
+  /* Speedcubing progress keeps its own localStorage keys, same as always. */
   html = html.replace("let DEV_MODE = false;", `let DEV_MODE = ${STATE.devMode?"true":"false"};`);
 
   /* Match whichever font the player currently has selected. */
@@ -1710,8 +1688,8 @@ function renderTimeAsk(){
         </button>
       </div>
 
-      <button type="button" class="aw-card" id="saveBtn" ${STATE.profile?"":"disabled"}
-        style="--edge:var(--red);--edge-dark:var(--red-dark);aspect-ratio:auto;flex-direction:row;justify-content:center;gap:8px;padding:8px 10px;margin-top:36px;width:50%;${STATE.profile?"":"opacity:.4;pointer-events:none"}">
+      <button type="button" class="aw-card" id="saveBtn" ${STATE.flagSaveReady?"":"disabled"}
+        style="--edge:var(--red);--edge-dark:var(--red-dark);aspect-ratio:auto;flex-direction:row;justify-content:center;gap:8px;padding:8px 10px;margin-top:36px;width:50%;${STATE.flagSaveReady?"":"opacity:.4;pointer-events:none"}">
         <span class="aw-avatar" style="width:24px;height:24px;font-size:13px">💾</span>
         <span class="aw-name" style="font-size:12px">Save</span>
       </button>
@@ -1764,7 +1742,7 @@ function renderPath(){
   return `<div class="path-wrap">
     <div class="header-badges" style="justify-content:flex-end;margin-bottom:14px">
       <button class="save-btn" id="openBookmarksBtn">🔖 Saved${STATE.bookmarkedFlags.length?` (${STATE.bookmarkedFlags.length})`:""}</button>
-      <button class="save-btn" id="switchPlayerBtn">🏠 Home</button>
+      <button class="save-btn" id="goHomeBtn">🏠 Home</button>
     </div>
     <header class="header">
       <div>
@@ -2729,24 +2707,12 @@ function bindEvents(){
     if(minutes==null) return;
     await startTimedSessionForView(minutes,"general");
   });
-  on("quitGeneral","click",()=>{
-    const frame=document.getElementById("generalFrame");
-    if(frame) frame.dataset.loaded="";
-    STATE.view="timeAsk";
-    render();
-  });
   on("learnRubikBtn","click",async()=>{
     const minutes=readSelectedMinutes();
     if(minutes==null) return;
     await startTimedSessionForView(minutes,"rubik");
   });
-  on("quitRubik","click",()=>{
-    const frame=document.getElementById("rubikFrame");
-    if(frame) frame.dataset.loaded="";
-    STATE.view="timeAsk";
-    render();
-  });
-  on("switchPlayerBtn","click",()=>{ STATE.view="timeAsk"; render(); });
+  on("goHomeBtn","click",()=>{ STATE.view="timeAsk"; render(); });
   on("openBookmarksBtn","click",()=>{ STATE.view="bookmarks"; render(); });
   on("quitBookmarks","click",()=>{ STATE.view="path"; render(); });
   document.querySelectorAll("[data-unbookmark]").forEach(btn=>{
@@ -3093,18 +3059,14 @@ function bindEvents(){
   on("backToPathFromReview","click",()=>{STATE.view="path";render();});
 }
 
-/* Sets up the correct day-path/continents for the chosen player,
-   loads their own save data, and shows the map. */
-async function selectProfile(profileId){
-  STATE.profile=profileId;
-  const {days,continents}=pathDataFor(profileId);
-  ACTIVE_DAYS=days;
-  ACTIVE_CONTINENTS=continents;
+/* Loads Bren's save and shows the map. */
+async function loadBrenSave(){
   const generalFrame=document.getElementById("generalFrame");
-  if(generalFrame) generalFrame.dataset.loaded=""; // force General Knowledge to reload under the new player's save
+  if(generalFrame) generalFrame.dataset.loaded=""; // force General Knowledge to reload with fresh state
   const rubikFrame=document.getElementById("rubikFrame");
-  if(rubikFrame) rubikFrame.dataset.loaded=""; // force Rubik's Cube to reload under the new player's save
-  await loadState(profileId);
+  if(rubikFrame) rubikFrame.dataset.loaded=""; // force Rubik's Cube to reload with fresh state
+  await loadState();
+  STATE.flagSaveReady=true;
   STATE.view="path";
   render();
 }
@@ -3133,14 +3095,12 @@ async function startTimedSession(minutes){
   STATE.sessionMinutes=minutes;
   STATE.sessionStartMs=Date.now();
   STATE.timerActive=true;
-  const profileId=STATE.pendingTimerProfile||"bren";
-  STATE.pendingTimerProfile=null;
-  await selectProfile(profileId);
+  await loadBrenSave();
   startFloatingTimer();
 }
 /* Same as startTimedSession, but for General Knowledge / Rubik's Cube,
    which live in their own iframe and shouldn't be routed through
-   selectProfile()'s Flag-only "path" view. */
+   loadBrenSave()'s Flag-only "path" view. */
 async function startTimedSessionForView(minutes,view){
   STATE.sessionMinutes=minutes;
   STATE.sessionStartMs=Date.now();
@@ -4966,6 +4926,20 @@ updateSavedBtn();
     border-radius:99px; padding:5px 12px; cursor:pointer;
   }
   .quiz-filter.active{background:var(--blue); border-color:var(--blue); color:#0d1117;}
+  .quiz-filter.disabled{opacity:.4; cursor:not-allowed;}
+  .quiz-filter:disabled{opacity:.4; cursor:not-allowed;}
+  .quiz-mode-toggle{
+    display:flex; gap:6px; justify-content:center; margin-top:16px;
+  }
+  .quiz-mode-btn{
+    font-family:var(--font-display); font-weight:700; font-size:12.5px;
+    background:var(--surface-2); border:2px solid var(--border); color:var(--mute);
+    border-radius:99px; padding:7px 16px; cursor:pointer;
+  }
+  .quiz-mode-btn.active{background:var(--accent1); border-color:var(--accent1-dark); color:#fff;}
+  .quiz-cube-stage{
+    perspective:640px; perspective-origin:50% 40%; margin:6px auto 0;
+  }
   .quiz-stats{
     display:flex; justify-content:center; gap:22px; margin-top:16px;
     font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--mute);
@@ -4992,6 +4966,9 @@ updateSavedBtn();
   .quiz-option.mono{font-family:'JetBrains Mono', monospace; font-size:12.5px;}
   .quiz-option.correct{background:var(--green-bg) !important; border-color:var(--green) !important; color:var(--green-text) !important; box-shadow:0 4px 0 var(--green-dark) !important;}
   .quiz-option.wrong{background:var(--red-bg) !important; border-color:var(--red) !important; color:var(--red-text) !important; box-shadow:0 4px 0 var(--accent1-dark) !important;}
+  .quiz-option-image{
+    padding:8px; display:flex; align-items:center; justify-content:center; min-height:104px;
+  }
   @media (max-width:480px){
     .quiz-options{grid-template-columns:1fr;}
   }
@@ -5088,6 +5065,55 @@ updateSavedBtn();
   }
   .alg-name{font-size:12px; color:var(--mute); min-width:120px; font-weight:600;}
   .alg-moves{font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--yellow); letter-spacing:0.02em;}
+
+  /* ── embedded algorithm-animation cube widget ── */
+  .alg-block{display:flex; flex-direction:column;}
+  .alg-toggle-btn{
+    font-family:var(--font-display); font-weight:700; font-size:11px; letter-spacing:.02em;
+    border-radius:8px; padding:5px 10px; border:1.5px solid var(--accent1-dark);
+    background:var(--accent1); color:#fff; cursor:pointer; flex-shrink:0; margin-left:auto;
+    transition:transform .08s ease;
+  }
+  .alg-toggle-btn:active{transform:translateY(1px);}
+  .alg-cube-panel{
+    background:var(--surface-2); border:1px solid var(--border); border-top:none;
+    border-radius:0 0 10px 10px; margin:-2px 0 6px; padding:14px 10px 12px;
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  .cube3d-stage{
+    width:176px; height:176px; margin:6px auto 4px; perspective:640px; perspective-origin:50% 40%;
+  }
+  .cube3d-scene{
+    width:100%; height:100%; position:relative; transform-style:preserve-3d;
+    transform:rotateX(20deg) rotateY(-35deg);
+  }
+  .cube3d-layer{ position:absolute; inset:0; transform-style:preserve-3d; }
+  .cubie3d{
+    position:absolute; top:50%; left:50%; width:26px; height:26px;
+    margin:-13px 0 0 -13px; transform-style:preserve-3d;
+  }
+  .cubie3d-face{
+    position:absolute; inset:0; border-radius:3px;
+    box-shadow:inset 0 0 0 1.5px #0d0a17, 0 1px 2px rgba(0,0,0,.35);
+    backface-visibility:hidden;
+  }
+  .alg-cube-movetrack{display:flex; flex-wrap:wrap; gap:4px; justify-content:center; max-width:280px;}
+  .alg-cube-movetoken{
+    font-family:'JetBrains Mono', monospace; font-size:12px; padding:2px 6px; border-radius:5px;
+    background:var(--surface); color:var(--mute); border:1px solid var(--border);
+  }
+  .alg-cube-movetoken.done{color:var(--text); border-color:transparent;}
+  .alg-cube-movetoken.active{background:var(--accent1); color:#fff; border-color:var(--accent1-dark); font-weight:700;}
+  .alg-cube-counter{font-size:11.5px; color:var(--mute); font-weight:700; text-align:center; min-height:15px;}
+  .alg-cube-controls{display:flex; align-items:center; gap:10px;}
+  .alg-cube-btn{
+    width:36px; height:36px; border-radius:50%; background:var(--surface); border:1.5px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; color:var(--text);
+    box-shadow:0 2px 0 var(--border);
+  }
+  .alg-cube-btn:active{transform:translateY(2px); box-shadow:none;}
+  .alg-cube-btn:disabled{opacity:.35; cursor:default;}
+  .alg-cube-btn.primary{background:var(--accent1); color:#fff; border-color:var(--accent1-dark); box-shadow:0 2px 0 var(--accent1-dark);}
   .mistake-card{margin-top:14px; background:rgba(255,75,75,0.08); border:1px solid var(--red); border-radius:12px; padding:12px 14px;}
   .mistake-card b{color:var(--red);}
   .mistake-card .right{color:var(--green); font-weight:600;}
@@ -5109,6 +5135,42 @@ updateSavedBtn();
   .quiz-banner-sub{font-size:12.5px; opacity:.9; margin-bottom:16px; font-weight:700;}
   .dock-bar{display:flex; gap:10px; margin-top:22px;}
 
+  /* ── tools picker (Speed Timer, Finger Tricks) ── */
+  .tool-option-list{display:flex; flex-direction:column; gap:12px; padding:4px 0 20px;}
+  .tool-option-card{
+    display:flex; align-items:center; gap:14px; width:100%; text-align:left;
+    background:var(--surface); border:2px solid var(--border); border-radius:18px;
+    padding:16px 16px; box-shadow:0 3px 0 var(--border); cursor:pointer; transition:transform .08s ease;
+  }
+  .tool-option-card:active{transform:translateY(2px); box-shadow:0 1px 0 var(--border);}
+  .tool-option-emoji{font-size:28px; flex-shrink:0;}
+  .tool-option-info{flex:1; min-width:0;}
+  .tool-option-title{font-size:16px; font-weight:800; color:var(--text); font-family:var(--font-display);}
+  .tool-option-sub{font-size:12.5px; color:var(--mute); font-weight:600; margin-top:2px;}
+  .tool-option-arrow{font-size:22px; color:var(--mute); flex-shrink:0;}
+
+  /* ── finger tricks trainer ── */
+  .ft-wrap{padding:4px 0 20px;}
+  .ft-intro-text{font-size:13.5px; color:var(--mute); line-height:1.6; font-weight:600; margin-bottom:16px;}
+  .ft-list{display:flex; flex-direction:column; gap:12px;}
+  .ft-card{background:var(--surface); border:2px solid var(--border); border-radius:16px; padding:14px 16px; box-shadow:0 3px 0 var(--border);}
+  .ft-card.done{border-color:var(--green); box-shadow:0 3px 0 var(--green);}
+  .ft-card-top{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:6px;}
+  .ft-card-name{font-size:15px; font-weight:800; color:var(--text); font-family:var(--font-display);}
+  .ft-card-moves{font-size:12.5px; color:var(--yellow); font-weight:700; white-space:nowrap;}
+  .ft-card-desc{font-size:13px; color:var(--mute); line-height:1.5; font-weight:600; margin:0 0 10px;}
+  .ft-card-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:8px;}
+  .ft-card-count{font-size:12.5px; font-weight:800; color:var(--text); font-family:'JetBrains Mono', monospace; flex-shrink:0;}
+  .ft-card-btns{display:flex; gap:6px;}
+  .ft-btn{
+    font-family:var(--font-display); font-weight:700; font-size:12.5px; border-radius:10px;
+    padding:8px 12px; border:2px solid var(--blue-dark); background:var(--blue); color:#fff;
+    box-shadow:0 2px 0 var(--blue-dark); cursor:pointer; transition:transform .08s ease;
+  }
+  .ft-btn:active{transform:translateY(2px); box-shadow:0 0 0 var(--blue-dark);}
+  .ft-btn-reset{background:var(--surface-2); color:var(--mute); border-color:var(--border); box-shadow:0 2px 0 var(--border);}
+  .ft-btn-reset:active{box-shadow:0 0 0 var(--border);}
+
   footer{
     text-align:center; color:var(--mute); font-size:12px; margin-top:40px;
     font-family:'JetBrains Mono', monospace;
@@ -5128,13 +5190,13 @@ const { useState, useEffect, useRef, useCallback } = React;
 const PHASES = [
   {
     id: 1,
-    title: "Foundations",
+    title: "Learn the Cube",
     color: "var(--red)",
-    range: "Days 1\u20135",
+    range: "Days 1\u20137",
     days: [
       {
         day: 1,
-        title: "Speak Cube",
+        title: "Notation",
         blurb: "Learn notation cold, before anything else.",
         tasks: [
           "Learn the six face letters: U D L R F B, plus ' (counter-clockwise) and 2 (double turn).",
@@ -5151,15 +5213,14 @@ const PHASES = [
         tasks: [
           "Practice a white cross on 10 random scrambles, aiming for 8 moves or fewer.",
           "Solve the cross with white facing down as well as facing up \u2014 both matter later.",
-          "Start the planning habit now: during inspection, before you touch the cube, locate all four cross edges and decide the order you'll solve them in. Only pick the cube up once you have a plan.",
           "Focus on tracking all four edges at once before you start turning."
         ],
         algs: [],
-        mistake: { wrong: "Solving the cross edge by edge, figuring out the next one only after finishing the last.", right: "Plan all four edges during inspection, before you make a single turn." }
+        mistake: { wrong: "Only ever practicing the cross with white on top.", right: "Practice with white on any face \u2014 real solves don't always start white-up." }
       },
       {
         day: 3,
-        title: "First Layer Corners",
+        title: "First Layer",
         blurb: "Insert the four white corners without an algorithm sheet.",
         tasks: [
           "Position a corner above its slot, then repeat a short turn-sequence until it seats.",
@@ -5170,7 +5231,7 @@ const PHASES = [
       },
       {
         day: 4,
-        title: "Middle Layer Edges",
+        title: "Second Layer",
         blurb: "Complete the first two layers by hand.",
         tasks: [
           "Learn the right-insert and left-insert edge algorithms below.",
@@ -5184,7 +5245,7 @@ const PHASES = [
       },
       {
         day: 5,
-        title: "Yellow Cross + Full Solve",
+        title: "Beginner Solve",
         blurb: "Chain everything into one complete beginner solve.",
         tasks: [
           "Learn the yellow-cross algorithm below and drill it until it's automatic.",
@@ -5193,49 +5254,132 @@ const PHASES = [
         ],
         algs: [{ name: "Yellow cross (edge orientation)", moves: "F R U R' U' F'" }],
         mistake: { wrong: "Re-deriving the algorithm from scratch each time instead of recognizing the shape.", right: "Learn to recognize the dot/line/L shape first, then apply the one algorithm you already know." }
+      },
+      {
+        day: 6,
+        title: "Repeat Solves",
+        blurb: "Turn a method you understand into a method your hands know.",
+        tasks: [
+          "Run 10 full untimed solves back to back, resetting mentally between each one.",
+          "After each solve, note one specific step that felt shaky \u2014 don't fix it yet, just notice it.",
+          "Solve from a fresh scramble each time; repeating the same scramble teaches memorization, not skill."
+        ],
+        algs: [],
+        mistake: { wrong: "Stopping practice as soon as you complete one clean solve.", right: "Repetition is what turns a method you understand into a method your hands know." }
+      },
+      {
+        day: 7,
+        title: "Cross Planning",
+        blurb: "Plan the whole cross during inspection, before you touch the cube.",
+        tasks: [
+          "During inspection, before touching the cube, locate all four white cross edges and plan the order and moves to solve them.",
+          "Practice planning the cross on 10 scrambles without picking up the cube until your plan is set.",
+          "Time your planning only (not the solve) and aim to plan within a 15-second inspection window."
+        ],
+        algs: [],
+        mistake: { wrong: "Solving the cross edge by edge, figuring out the next one only after finishing the last.", right: "Plan all four edges during inspection, before you make a single turn." }
       }
     ]
   },
   {
     id: 2,
-    title: "Last Layer, 2-Look",
-    color: "var(--yellow)",
-    range: "Days 6\u20138",
+    title: "Build Good Habits",
+    color: "var(--orange)",
+    range: "Days 8\u201314",
     days: [
       {
-        day: 6,
-        title: "2-Look OLL: Corners",
-        blurb: "Orient every last-layer corner in one pass.",
-        tasks: ["Drill Sune and Antisune until you can fire them without thinking.", "Practice recognizing the corner pattern before you look at edges at all."],
-        algs: [
-          { name: "Sune", moves: "R U R' U R U2 R'" },
-          { name: "Antisune", moves: "R U2 R' U' R U' R'" }
-        ]
-      },
-      {
-        day: 7,
-        title: "2-Look PLL: Corners & Edges",
-        blurb: "Permute the last layer in two passes.",
-        tasks: ["Learn the corner-cycle and edge-cycle algorithms below.", "Practice spotting whether corners or edges need solving first."],
-        algs: [
-          { name: "Corner cycle (A-perm)", moves: "x R' U R' D2 R U' R' D2 R2 x'" },
-          { name: "Edge cycle (U-perm)", moves: "R U' R U R U R U' R' U' R2" }
-        ]
-      },
-      {
         day: 8,
-        title: "Baseline Check",
+        title: "Finger Tricks",
+        blurb: "Smooth, isolated finger motion is the foundation every faster solve is built on.",
+        tasks: [
+          "Learn to turn R and R' using only your right index and middle fingers, without repositioning your whole hand.",
+          "Practice the same finger-trick motion for U and U' using your right index finger while your left hand stays anchored.",
+          "Do 5 minutes of slow, deliberate finger-trick reps before any timed solving today \u2014 smoothness first, speed later."
+        ],
+        algs: [],
+        mistake: { wrong: "Turning every face by rotating your whole wrist.", right: "Isolate the turn to just the fingers doing that specific move \u2014 it's faster and it doesn't disturb your grip." }
+      },
+      {
+        day: 9,
+        title: "Inspection",
+        blurb: "The 15 seconds before you start turning are free \u2014 use them.",
+        tasks: [
+          "Give yourself 15 seconds before every practice solve to look at the scramble before starting the timer.",
+          "Use inspection only to plan the cross (and, once you know it, your first F2L pair) \u2014 never to plan turns beyond that.",
+          "Practice starting your solve the instant inspection ends, without a pause to 're-check.'"
+        ],
+        algs: [],
+        mistake: { wrong: "Picking up the cube and turning before you've actually planned anything.", right: "Inspection time is free \u2014 planning during it is not cheating, it's the skill." }
+      },
+      {
+        day: 10,
+        title: "Trigger Drills",
+        blurb: "Most algorithms are just a handful of triggers chained together.",
+        tasks: [
+          "Drill the 'sexy move' (R U R' U') twenty times in a row without stopping, focusing on rhythm.",
+          "Drill the mirror trigger (L' U' L U) the same way.",
+          "Notice how many algorithms you already know are just these two triggers, repeated or combined."
+        ],
+        algs: [
+          { name: "Sexy move", moves: "R U R' U'" },
+          { name: "Sexy move, mirror", moves: "L' U' L U" }
+        ],
+        mistake: { wrong: "Treating each trigger as a brand-new sequence to memorize every time it shows up in an algorithm.", right: "Recognize triggers as single chunks \u2014 your hands should fire them as one motion, not four separate turns." }
+      },
+      {
+        day: 11,
+        title: "Beginner Speed Solving",
+        blurb: "Speed right now comes from smoothing what you already know, not adding more.",
+        tasks: [
+          "Do 10 timed solves today and log every time, even the bad ones.",
+          "Don't chase a single fast time \u2014 chase a smaller gap between your best and worst solve.",
+          "Resist the urge to add new algorithms this week; consistency is this week's whole job."
+        ],
+        algs: [],
+        mistake: { wrong: "Judging progress by your single best time.", right: "Judge progress by your average \u2014 one lucky solve doesn't mean you've actually gotten faster." }
+      },
+      {
+        day: 12,
+        title: "Cross Efficiency",
+        blurb: "Take the planning habit from Day 7 and start timing it.",
+        tasks: [
+          "Re-run Day 7's planning drill, now timing just the cross on 10 scrambles.",
+          "Aim to solve the cross in 8 moves or fewer on at least half your scrambles.",
+          "Practice solving the cross with your eyes drifting to the top layer, not the bottom \u2014 this trains the lookahead you'll need for F2L."
+        ],
+        algs: [],
+        mistake: { wrong: "Watching your hands and the cross piece you're currently placing.", right: "Let your eyes drift toward the pieces you'll need next, even while your hands finish the cross." }
+      },
+      {
+        day: 13,
+        title: "Cube Rotation Reduction",
+        blurb: "Every whole-cube rotation costs time. Today's goal is fewer rotations, not faster turns.",
+        tasks: [
+          "Track pieces with your eyes instead of physically rotating the cube to go look for them.",
+          "Solve 5 full solves using only U, R, F, L, D, B turns (and their primes) \u2014 no x, y, or z whole-cube rotations at all.",
+          "This single habit is one of the fastest ways to shave seconds off a solve without learning a single new algorithm."
+        ],
+        algs: [],
+        mistake: { wrong: "Rotating the cube every time a piece is out of view.", right: "Move your eyes first \u2014 only rotate the cube when there's truly no other way to see the piece." }
+      },
+      {
+        day: 14,
+        title: "Under 90 Sec Goal",
         blurb: "Find out where you actually stand before F2L begins.",
-        tasks: ["Do 5 timed full solves and record every time.", "Identify your single slowest step honestly \u2014 that's next week's target.", "Rest your hands; this is a light day."],
+        tasks: [
+          "Do 5 timed full solves and record every time.",
+          "Identify your single slowest step honestly \u2014 that's next week's target.",
+          "If you're not yet averaging under 90 seconds, that's fine \u2014 repeat this week's drills before moving on rather than rushing into F2L."
+        ],
         algs: []
       }
     ]
   },
   {
     id: 3,
-    title: "F2L \u2014 First Two Layers",
+    title: "F2L",
     color: "var(--blue)",
-    range: "Days 9\u201316",
+    range: "Days 15\u201320",
     gate: {
       title: "Ready for F2L?",
       requirements: [
@@ -5245,20 +5389,20 @@ const PHASES = [
     },
     days: [
       {
-        day: 9,
-        title: "Intuitive F2L I \u2014 Pair Formation",
+        day: 15,
+        title: "Pair Recognition",
         blurb: "This is where speed actually comes from. Learn to see pairs before you learn to fix them.",
         tasks: [
           "On a solved cube, identify all four corner\u2013edge pairs by color.",
           "Practice pairing a corner with its matching edge in the top layer, before inserting either piece.",
-          "Learn to spot a 'bar' \u2014 a corner and edge already lined up in a straight row, ready to drop into the slot in one move \u2014 and a 'block' \u2014 a chunk of the cube (like a full corner) that's already solved together. Recognizing these shapes is what F2L speed is actually built on, more than any algorithm.",
+          "Learn to spot a 'bar' \u2014 a corner and edge already lined up in a straight row, ready to drop into the slot in one move \u2014 and a 'block' \u2014 a chunk of the cube already solved together. Recognizing these shapes is what F2L speed is actually built on, more than any algorithm.",
           "Do this without any algorithm \u2014 pairing is a recognition skill, not a memorized sequence."
         ],
         algs: []
       },
       {
-        day: 10,
-        title: "Intuitive F2L II \u2014 Slotting Without Algorithms",
+        day: 16,
+        title: "Easy F2L",
         blurb: "Once a pair is formed, most beginner cases just drop straight in.",
         tasks: [
           "Practice the two direct-insert cases below until either hand can lead.",
@@ -5270,9 +5414,9 @@ const PHASES = [
         ]
       },
       {
-        day: 11,
-        title: "Intuitive F2L III \u2014 Cutting Cube Rotations",
-        blurb: "Every whole-cube rotation costs time. Today's goal is fewer rotations, not faster turns.",
+        day: 17,
+        title: "Rotation Control",
+        blurb: "Apply the rotation-cutting habit from Week 2 directly inside F2L.",
         tasks: [
           "Track pieces with your eyes instead of physically rotating the cube to go look for them.",
           "Solve five F2L pairs in a row using only U, R, and F turns (and their primes) \u2014 no x, y, or z rotations at all.",
@@ -5281,53 +5425,40 @@ const PHASES = [
         algs: []
       },
       {
-        day: 12,
-        title: "Intuitive F2L IV \u2014 Using the Empty Slot",
-        blurb: "One of the biggest intuitive-F2L skills, and it isn't on any algorithm sheet.",
+        day: 18,
+        title: "Lookahead Basics",
+        blurb: "Start moving your eyes to the next pair before your hands finish this one.",
         tasks: [
-          "When a slot is still empty, you can park an inconvenient piece there for a moment instead of sending it back to the top layer.",
-          "Find a scramble where two pairs are tangled together, and solve the easier pair using the other slot as temporary space.",
-          "This is exactly how many fast solvers avoid algorithms altogether on awkward cases."
+          "While solving one F2L pair, spend the last second of that pair looking for the next one \u2014 before your hands even finish.",
+          "Practice pausing your hands, not your eyes, between pairs, just to notice where you're looking first.",
+          "Solve 5 scrambles focusing only on where your eyes go, ignoring your solve time entirely."
         ],
-        algs: []
+        algs: [],
+        mistake: { wrong: "Finishing a pair, then starting your search for the next one.", right: "Start searching for the next pair while your hands are still finishing the current one." }
       },
       {
-        day: 13,
-        title: "Algorithmic F2L I \u2014 Cases Intuition Misses",
-        blurb: "Corner and edge separated but in the same layer \u2014 a real algorithm actually helps here.",
-        tasks: ["Learn the two cases below.", "Try solving each intuitively first, twice, before reaching for the memorized fix \u2014 you'll retain it better."],
+        day: 19,
+        title: "Difficult F2L Cases",
+        blurb: "The non-intuitive cases most people put off. Not you.",
+        tasks: [
+          "Learn the three cases below \u2014 corner and edge separated, misoriented in place, and corner stuck under edge.",
+          "Try solving each intuitively first, twice, before reaching for the memorized fix \u2014 you'll retain it better.",
+          "These cover the awkward cases intuition usually misses; the rest are waiting in the Advanced F2L bonus day."
+        ],
         algs: [
           { name: "Corner up, edge in slot", moves: "R U' R' U R U' R'" },
-          { name: "Mirror case", moves: "U' R U R' U R U R'" }
-        ]
-      },
-      {
-        day: 14,
-        title: "Algorithmic F2L II \u2014 Misoriented in Place",
-        blurb: "Both pieces are already placed, just twisted the wrong way.",
-        tasks: ["Learn the two cases below.", "These reward slow, deliberate setup moves \u2014 don't rush the read."],
-        algs: [
           { name: "Edge in slot, corner above", moves: "U' R U R' U2 R U' R'" },
-          { name: "Both misoriented, right", moves: "R U' R' U R U' R' U R U' R'" }
-        ]
-      },
-      {
-        day: 15,
-        title: "Algorithmic F2L III \u2014 Awkward Cases",
-        blurb: "The non-intuitive ones most people put off. Not you.",
-        tasks: ["Learn the case below.", "Say the case out loud before executing \u2014 it builds recognition speed."],
-        algs: [
           { name: "Corner stuck under edge", moves: "R U R' U' R U' R' U2 R U' R'" }
         ]
       },
       {
-        day: 16,
-        title: "F2L Fluency",
+        day: 20,
+        title: "Timed F2L",
         blurb: "String pairing, slotting, and rotation-cutting together \u2014 smoothly, no pauses.",
         tasks: [
-          "Solve F2L only, untimed, ten times, leaning on the intuitive skills from Days 9\u201312 as much as the algorithms from 13\u201315.",
+          "Solve F2L only, timed, ten times, leaning on the intuitive skills as much as the algorithms.",
           "Plenty of sub-15-second F2L solvers still solve most cases intuitively \u2014 algorithms are a backup for the awkward ones, not the main method.",
-          "Prioritize smoothness over speed \u2014 speed follows fluency, not the reverse."
+          "Log your F2L-only average \u2014 this is the number the next gate checks."
         ],
         algs: []
       }
@@ -5335,11 +5466,11 @@ const PHASES = [
   },
   {
     id: 4,
-    title: "OLL \u2014 Easy Cases First",
-    color: "var(--orange)",
-    range: "Days 17\u201323",
+    title: "Last Layer",
+    color: "var(--green)",
+    range: "Days 21\u201326",
     gate: {
-      title: "Ready for OLL?",
+      title: "Ready for the last layer?",
       requirements: [
         { label: "Cross under 10 sec", category: "cross", thresholdSec: 10 },
         { label: "F2L under 25 sec", category: "f2l", thresholdSec: 25 },
@@ -5348,80 +5479,88 @@ const PHASES = [
     },
     days: [
       {
-        day: 17,
-        title: "Easy OLLs I \u2014 Sune Family",
-        blurb: "The most common shapes you'll see, and ones you already half-know.",
-        tasks: [
-          "You already learned Sune and Antisune on Day 6 \u2014 this is where they get folded into full OLL.",
-          "Learn one more Sune-family variant below.",
-          "Start training shape recognition now, not move-counting: every OLL case has a named silhouette \u2014 dot, line, L, S/Z, P, T, fish, cross \u2014 and recognizing the shape is what actually gets fast, not memorizing which pieces are where.",
-          "These three cases alone cover a large share of real solves."
-        ],
-        algs: [
-          { name: "Sune variant", moves: "R U R' U R U' R' U R U2 R'" }
-        ]
-      },
-      {
-        day: 18,
-        title: "Easy OLLs II \u2014 Line Cases",
-        blurb: "One edge pair already forms a straight line across the top.",
-        tasks: ["Learn the two line-case algorithms below.", "Notice how the bar's position changes your setup move \u2014 that's the whole recognition skill."],
-        algs: [
-          { name: "Line case", moves: "F R U R' U' F'" },
-          { name: "Line case, mirror", moves: "F' L' U' L U F" }
-        ]
-      },
-      {
-        day: 19,
-        title: "Easy OLLs III \u2014 L Cases",
-        blurb: "An L-shaped block of oriented pieces in one corner.",
-        tasks: ["Learn the two L-shape algorithms below.", "That's 7 algorithms total so far \u2014 a small, genuinely useful slice of full OLL."],
-        algs: [
-          { name: "L-shape", moves: "F U R U' R' F'" },
-          { name: "L-shape, mirror", moves: "F' U' L' U L F" }
-        ]
-      },
-      {
-        day: 20,
-        title: "Dot Cases I",
-        blurb: "No edges oriented at all \u2014 the hardest shapes to recognize. Go slow today.",
-        tasks: ["Learn one dot-case algorithm and drill it in isolation before adding a second.", "Dot cases are the most commonly mis-recognized OLLs \u2014 accuracy first, speed later."],
-        algs: [
-          { name: "Dot case", moves: "F R U R' U' F' f R U R' U' f'" }
-        ]
-      },
-      {
         day: 21,
-        title: "Dot Cases II",
-        blurb: "One more dot case, plus review of everything from Days 17\u201320.",
-        tasks: ["Learn one more dot-case algorithm.", "Mix it with yesterday's \u2014 dot cases are easy to confuse with each other."],
+        title: "2-Look OLL",
+        blurb: "Orient every last-layer corner in one pass.",
+        tasks: ["Drill Sune and Antisune until you can fire them without thinking.", "Practice recognizing the corner pattern before you look at edges at all."],
         algs: [
-          { name: "Dot case, mirror", moves: "f R U R' U' f' F R U R' U' F'" }
+          { name: "Sune", moves: "R U R' U R U2 R'" },
+          { name: "Antisune", moves: "R U2 R' U' R U' R'" }
         ]
       },
       {
         day: 22,
-        title: "OLL Recognition Drill I",
-        blurb: "No new algorithms today \u2014 just speed of recognition on what you've learned.",
-        tasks: ["Drill all 9 algorithms from Days 17\u201321 in random order, untimed.", "If a case takes more than 2 seconds to recognize, give it extra reps rather than moving on."],
-        algs: []
+        title: "Easy OLL",
+        blurb: "Fold Sune and Antisune into full recognition, and add two more common shapes.",
+        tasks: [
+          "You already learned Sune and Antisune on Day 21 \u2014 this is where they fold into full OLL.",
+          "Learn the Sune variant, line case, and L-shape algorithms below \u2014 together with 2-Look OLL, these cover a large share of real solves.",
+          "Start training shape recognition now, not move-counting: every OLL case has a named silhouette \u2014 dot, line, L, S/Z, P, T, fish, cross \u2014 and recognizing the shape is what actually gets fast."
+        ],
+        algs: [
+          { name: "Sune variant", moves: "R U R' U R U' R' U R U2 R'" },
+          { name: "Line case", moves: "F R U R' U' F'" },
+          { name: "L-shape", moves: "F U R U' R' F'" }
+        ]
       },
       {
         day: 23,
-        title: "OLL Recognition Drill II",
-        blurb: "Lock in this subset before moving to PLL.",
-        tasks: ["One more full mixed drill of the same 9 cases.", "Full OLL is 57 algorithms \u2014 this program covers a genuinely useful subset, not all of them. Learn the rest gradually after these 30 days, whenever a new case keeps costing you time.", "Plenty of sub-20 solvers still use 2-look OLL for every solve \u2014 full OLL speeds you up, but it isn't a requirement to keep improving."],
+        title: "Most Common PLL",
+        blurb: "Three cases you'll actually see in nearly every solve.",
+        tasks: [
+          "Learn T-perm, Ua-perm, and Ub-perm below \u2014 together these three cover a large share of real solves.",
+          "T-perm especially is worth over-practicing; it shows up constantly.",
+          "Learn to recognize PLL by 'headlights' \u2014 two same-colored stickers on the same layer, on adjacent side faces \u2014 and 'bars' \u2014 a solid line of one color across a whole side. These two visual cues tell you the case family before you even check the exact permutation."
+        ],
+        algs: [
+          { name: "T-perm", moves: "R U R' U' R' F R2 U' R' U' R U R' F'" },
+          { name: "Ua-perm", moves: "R U' R U R U R U' R' U' R2" },
+          { name: "Ub-perm", moves: "R' U R' U' R' U' R' U R U R2" }
+        ]
+      },
+      {
+        day: 24,
+        title: "Recognition Drills",
+        blurb: "No new algorithms today \u2014 just speed of recognition on what you've learned.",
+        tasks: [
+          "Drill every algorithm learned this week \u2014 2-Look OLL, Easy OLL, and Most Common PLL \u2014 in random order, untimed.",
+          "If a case takes more than 2 seconds to recognize, give it extra reps rather than moving on.",
+          "Full OLL is 57 algorithms and full PLL is 21 \u2014 this program covers a genuinely useful subset, not all of them. The rest is waiting in the Bonus track whenever a new case keeps costing you time."
+        ],
+        algs: []
+      },
+      {
+        day: 25,
+        title: "Lookahead",
+        blurb: "Four specific drills, not just 'go slower.' Each one trains a different half of lookahead.",
+        tasks: [
+          "No-pauses challenge: solve cross \u2192 F2L \u2192 OLL \u2192 PLL as one continuous motion. If your hands stop moving between steps, note where it happened and target that exact spot next solve.",
+          "Half-speed solves: deliberately solve at half your normal pace. The goal isn't slower turning, it's giving your eyes time to get ahead of your hands instead of catching up.",
+          "Eyes-forward drill: during F2L specifically, the instant one pair locks in, your eyes should already be on the next pair \u2014 not watching the piece you just placed.",
+          "Cross-plus-one planning: during inspection, plan the cross plus your first F2L pair before you touch the cube \u2014 the habit from Day 7, pushed one step further."
+        ],
+        algs: []
+      },
+      {
+        day: 26,
+        title: "Test Day",
+        blurb: "Twelve timed solves. See exactly how far this program took you.",
+        tasks: [
+          "Do an ao12 (average of 12) using the timer above.",
+          "Log your best, worst, and average \u2014 most learners land somewhere around 25\u201345 seconds at this point, and that's a solid result.",
+          "Write down your next target: tighter F2L tracking, full OLL fluency, or faster turning. Sub-20 is a realistic milestone from here with continued practice, not a finish line."
+        ],
         algs: []
       }
     ]
   },
   {
     id: 5,
-    title: "Full PLL",
-    color: "var(--green)",
-    range: "Days 24\u201328",
+    title: "Beyond 30 Days",
+    color: "var(--violet)",
+    range: "Days 27\u201333 \u00b7 Bonus",
     gate: {
-      title: "Ready for PLL?",
+      title: "Ready for the bonus track?",
       requirements: [
         { label: "Cross under 8 sec", category: "cross", thresholdSec: 8 },
         { label: "F2L under 18 sec", category: "f2l", thresholdSec: 18 },
@@ -5430,100 +5569,102 @@ const PHASES = [
     },
     days: [
       {
-        day: 24,
-        title: "PLL \u2014 Ua, Ub, H, Z",
-        blurb: "The pure edge-cycles. No corners to track, just clean recognition.",
+        day: 27,
+        title: "Full OLL Roadmap",
+        blurb: "Start filling in the rest of full OLL, a few cases at a time.",
         tasks: [
-          "Learn all four algorithms below.",
-          "Learn to recognize PLL by 'headlights' \u2014 two same-colored stickers on the same layer, on adjacent side faces, showing you a pair that's already correctly matched \u2014 and 'bars' \u2014 a solid line of one color across a whole side. These two visual cues tell you the case family before you even check the exact permutation.",
-          "H and Z look similar at first glance \u2014 drill them back to back so you stop confusing them."
+          "Pick 2\u20133 OLL cases you haven't learned yet \u2014 ones you keep re-deriving instead of recognizing \u2014 and add them to your practice.",
+          "Group new cases by shape family (dot, line, L, S/Z, P, T, fish, cross) rather than learning them in numerical order.",
+          "Full OLL is 57 cases total; adding a couple a week is plenty \u2014 there's no rush. The two dot cases below are a good place to start."
         ],
         algs: [
-          { name: "Ua-perm", moves: "R U' R U R U R U' R' U' R2" },
-          { name: "Ub-perm", moves: "R' U R' U' R' U' R' U R U R2" },
-          { name: "H-perm", moves: "M2 U M2 U2 M2 U M2" },
-          { name: "Z-perm", moves: "M' U M2 U M2 U M' U2 M2" }
-        ]
-      },
-      {
-        day: 25,
-        title: "PLL \u2014 T, Ja, Jb",
-        blurb: "Three of the most common cases you'll actually see in solves.",
-        tasks: ["Learn all three today \u2014 they share a similar corner-swap feel.", "T-perm especially is worth over-practicing; it shows up constantly."],
-        algs: [
-          { name: "T-perm", moves: "R U R' U' R' F R2 U' R' U' R U R' F'" },
-          { name: "Ja-perm", moves: "R' U L' U2 R U' R' U2 R L" },
-          { name: "Jb-perm", moves: "R U R' F' R U R' U' R' F R2 U' R'" }
-        ]
-      },
-      {
-        day: 26,
-        title: "PLL \u2014 F, Ra, Rb",
-        blurb: "Longer algorithms \u2014 take these slower today than you have the rest of the week.",
-        tasks: ["Learn one, drill it to comfort, then move to the next \u2014 don't chain-learn all three back to back.", "These are genuinely harder to memorize; expect this day to take longer."],
-        algs: [
-          { name: "F-perm", moves: "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R" },
-          { name: "Ra-perm", moves: "R U' R' U' R U R D R' U' R D' R' U2 R'" },
-          { name: "Rb-perm", moves: "R' U2 R U2 R' F R U R' U' R' F' R2" }
-        ]
-      },
-      {
-        day: 27,
-        title: "PLL \u2014 A Perms & E",
-        blurb: "Corner-only cycles, including the widely feared E-perm.",
-        tasks: ["Learn Aa, Ab, and E.", "E-perm looks intimidating written out, but it's just a repeating pattern \u2014 say it in chunks."],
-        algs: [
-          { name: "Aa-perm", moves: "x R' U R' D2 R U' R' D2 R2 x'" },
-          { name: "Ab-perm", moves: "x R2 D2 R U R' D2 R U' R x'" },
-          { name: "E-perm", moves: "x' R U' R' D R U R' D' R U R' D R U' R' D' x" }
-        ]
+          { name: "Dot case", moves: "F R U R' U' F' f R U R' U' f'" },
+          { name: "Dot case, mirror", moves: "f R U R' U' f' F R U R' U' F'" }
+        ],
+        mistake: { wrong: "Learning new OLL cases in the order listed on an algorithm sheet.", right: "Learn the cases that are actually slowing your solves down first \u2014 check which shape you hesitate on most." }
       },
       {
         day: 28,
-        title: "PLL \u2014 G Perms",
-        blurb: "Ga, Gb, Gc, and Gd get the whole day. Widely considered the hardest set in all of PLL \u2014 that's normal, not a sign you're behind.",
-        tasks: ["Learn one G-perm fully \u2014 comfortable recall, not just correct execution \u2014 before starting the next.", "If you only get through two or three today, that's a completely reasonable outcome; finish the rest tomorrow before moving on.", "This schedule covers 17 of the 21 PLL cases. Na, Nb, V, and Y perms are worth adding afterward, whenever one of them shows up often enough to be worth learning."],
+        title: "Remaining PLL Cases",
+        blurb: "A reference list of the rest of full PLL. Work through a couple per session, not all at once.",
+        tasks: [
+          "This covers 15 more PLL cases \u2014 don't expect to learn them all today. Treat this as your reference list and work through a couple per practice session.",
+          "Learn one case fully \u2014 comfortable recall, not just correct execution \u2014 before starting the next.",
+          "G-perms are widely considered the hardest set in all of PLL \u2014 that's normal, not a sign you're behind. Na, Nb, V, and Y perms are worth adding after these, whenever one of them shows up often enough to be worth learning."
+        ],
         algs: [
+          { name: "H-perm", moves: "M2 U M2 U2 M2 U M2" },
+          { name: "Z-perm", moves: "M' U M2 U M2 U M' U2 M2" },
+          { name: "Ja-perm", moves: "R' U L' U2 R U' R' U2 R L" },
+          { name: "Jb-perm", moves: "R U R' F' R U R' U' R' F R2 U' R'" },
+          { name: "F-perm", moves: "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R" },
+          { name: "Ra-perm", moves: "R U' R' U' R U R D R' U' R D' R' U2 R'" },
+          { name: "Rb-perm", moves: "R' U2 R U2 R' F R U R' U' R' F' R2" },
+          { name: "Aa-perm", moves: "x R' U R' D2 R U' R' D2 R2 x'" },
+          { name: "Ab-perm", moves: "x R2 D2 R U R' D2 R U' R x'" },
+          { name: "E-perm", moves: "x' R U' R' D R U R' D' R U R' D R U' R' D' x" },
           { name: "Ga-perm", moves: "R2 U R' U R' U' R U' R2 U' D R' U R D'" },
           { name: "Gb-perm", moves: "R' U' R U D' R2 U R' U R U' R U' R2 D" },
           { name: "Gc-perm", moves: "R2 U' R U' R U R' U R2 U D' R U' R' D" },
           { name: "Gd-perm", moves: "R U R' U' D R2 U' R U' R' U R' U R2 D'" }
         ]
-      }
-    ]
-  },
-  {
-    id: 6,
-    title: "Speed & Lookahead",
-    color: "var(--violet)",
-    range: "Days 29\u201330",
-    gate: {
-      title: "Ready for the speed & lookahead stretch?",
-      requirements: [
-        { label: "Cross under 6 sec", category: "cross", thresholdSec: 6 },
-        { label: "F2L under 14 sec", category: "f2l", thresholdSec: 14 },
-        { label: "Average solve under 35 sec", category: "full", thresholdSec: 35 }
-      ]
-    },
-    days: [
+      },
       {
         day: 29,
-        title: "Lookahead Training",
-        blurb: "Four specific drills, not just 'go slower.' Each one trains a different half of lookahead.",
+        title: "Advanced F2L",
+        blurb: "One of the biggest intuitive-F2L skills, and it isn't on any algorithm sheet.",
         tasks: [
-          "No-pauses challenge: solve cross \u2192 F2L \u2192 OLL \u2192 PLL as one continuous motion. If your hands stop moving between steps, that's a pause \u2014 note where it happened and do another solve targeting that exact spot.",
-          "Half-speed solves: deliberately solve at half your normal pace. The goal isn't slower turning, it's giving your eyes time to get ahead of your hands instead of catching up.",
-          "Eyes-forward drill: during F2L specifically, the instant one pair locks in, your eyes should already be on the next pair \u2014 not watching the piece you just placed.",
-          "Cross-plus-one planning: during inspection, plan the cross plus your first F2L pair before you touch the cube \u2014 the habit from Day 2, pushed one step further.",
-          "This is one of the biggest jumps from beginner to intermediate. Expect it to feel slow and effortful at first \u2014 that discomfort is the skill being built, not a sign it isn't working."
+          "When a slot is still empty, you can park an inconvenient piece there for a moment instead of sending it back to the top layer.",
+          "Find a scramble where two pairs are tangled together, and solve the easier pair using the other slot as temporary space.",
+          "Start experimenting with multi-slotting \u2014 solving two pairs in a row without returning to a neutral top-layer view in between."
+        ],
+        algs: [],
+        mistake: { wrong: "Sending an inconvenient piece back to the top layer whenever it's in the way.", right: "An empty slot is temporary storage \u2014 park pieces there instead of wasting moves sending them away." }
+      },
+      {
+        day: 30,
+        title: "Advanced Lookahead",
+        blurb: "Push lookahead further than Week 4 \u2014 across steps, not just within one.",
+        tasks: [
+          "Two-pair lookahead: while solving one F2L pair, plan not just the next pair but the one after that.",
+          "Cross-into-OLL lookahead: as you finish your last F2L pair, glance at the last layer and start reading the OLL case before F2L is even done.",
+          "Slow-tracking drill: do a slow solve where you briefly close your eyes for 2\u20133 seconds at a time during F2L, relying on memory of where pieces were."
         ],
         algs: []
       },
       {
-        day: 30,
-        title: "Test Day",
-        blurb: "Twelve timed solves. See exactly how far thirty days took you.",
-        tasks: ["Do an ao12 (average of 12) using the timer above.", "Log your best, worst, and average \u2014 most learners land somewhere around 25\u201345 seconds at this point, and that's a solid result.", "Write down your next target: tighter F2L tracking, full OLL fluency, or faster turning. Sub-20 is a realistic milestone from here with continued practice, not a 30-day finish line."],
+        day: 31,
+        title: "Cross Optimization",
+        blurb: "Solve the cross and a free F2L pair together, when the scramble hands it to you.",
+        tasks: [
+          "Learn what an X-Cross is: solving the cross plus one F2L pair together during inspection, before you've made a single move.",
+          "On 5 scrambles, spend inspection looking specifically for one 'free' pair that solves alongside a cross edge.",
+          "Don't force an X-Cross on every scramble \u2014 it only pays off when the pieces line up naturally; most solves are still a normal cross."
+        ],
+        algs: [],
+        mistake: { wrong: "Trying to force an X-Cross on every single solve.", right: "Take an X-Cross only when it's genuinely there \u2014 chasing one that isn't costs more time than a plain cross would." }
+      },
+      {
+        day: 32,
+        title: "Color Neutrality",
+        blurb: "A long-term project: stop always starting with white.",
+        tasks: [
+          "Instead of always starting with white, inspect the scramble and pick whichever color has the shortest, most efficient cross.",
+          "Practice 10 solves starting with a color other than white, chosen at random before you look at the scramble.",
+          "This is a long-term project \u2014 don't expect fluency for weeks or months of gradual practice."
+        ],
+        algs: [],
+        mistake: { wrong: "Switching colors mid-solve because a different color 'looks easier' partway through.", right: "Pick your starting color during inspection and commit \u2014 indecision costs more time than any color choice does." }
+      },
+      {
+        day: 33,
+        title: "Sub-20 Training",
+        blurb: "Twelve more timed solves, and a plan for what comes next.",
+        tasks: [
+          "Run another ao12 (average of 12) and compare it to your Test Day result from Week 4.",
+          "Identify which single phase \u2014 cross, F2L, OLL recognition, or PLL recognition \u2014 is now your biggest time sink, and make that your next practice focus.",
+          "Sub-20 comes from stacking small gains across every phase, not one breakthrough \u2014 keep layering in the bonus topics above at your own pace."
+        ],
         algs: []
       }
     ]
@@ -5535,11 +5676,10 @@ function buildAlgBank() {
   const bank = [];
   const seen = /* @__PURE__ */ new Set();
   PHASES.forEach((phase) => {
-    let category = "F2L";
-    if (phase.title.indexOf("OLL") !== -1) category = "OLL";
-    else if (phase.title.indexOf("PLL") !== -1) category = "PLL";
-    else if (phase.id === 2) category = "2-Look LL";
     phase.days.forEach((day) => {
+      let category = "F2L";
+      if (day.title.indexOf("OLL") !== -1) category = "OLL";
+      else if (day.title.indexOf("PLL") !== -1) category = "PLL";
       day.algs.forEach((a) => {
         const key = a.name + a.moves;
         if (!seen.has(key)) {
@@ -5552,6 +5692,17 @@ function buildAlgBank() {
   return bank;
 }
 const ALG_BANK = buildAlgBank();
+const FINGER_TRICKS = [
+  { id: "uflick", name: "U Flick", moves: "U", desc: "Flick the top layer with just your right index finger, snapping it around without repositioning your whole hand." },
+  { id: "uprime", name: "U'", moves: "U'", desc: "The same flick in reverse \u2014 pull your right index finger back toward you instead of pushing it away." },
+  { id: "doubleflick", name: "Double Flick", moves: "U2", desc: "Two flicks back to back, or one continuous 180\u00b0 flick, without stopping in the middle. This is what makes U2 feel like one move instead of two." },
+  { id: "rtrigger", name: "R Trigger", moves: "R U R'", desc: "The classic right-hand trigger: push R up with your middle finger, U with your index, then pull R' back down \u2014 three moves that should feel like one squeeze." },
+  { id: "sexymove", name: "Sexy Move", moves: "R U R' U'", desc: "An R trigger with a U' flick tacked on the end. It's the single most common building block in F2L, OLL, and PLL algorithms \u2014 drill it until it's instinctive." },
+  { id: "sledgehammer", name: "Sledgehammer", moves: "R' F R F'", desc: "The left-hand cousin of the sexy move, using R' and F instead of R and U. Shows up constantly in OLL and F2L." },
+  { id: "widemoves", name: "Wide Moves", moves: "r  l  u  d  f  b", desc: "Turning two layers at once with a slightly cupped hand. The hand shape is different from a normal single-layer turn \u2014 used heavily in rotationless solving." },
+  { id: "mslice", name: "M Slice", moves: "M", desc: "A middle-layer turn, driven by your left thumb and fingers pinching and rotating the middle slice while your index fingers anchor U and D. Essential for H-perm, Z-perm, and other M-heavy algorithms." }
+];
+const FINGER_TRICK_TARGET = 100;
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -5684,6 +5835,321 @@ function darkOf(colorVarStr) {
   };
   return map[colorVarStr] || "var(--accent1-dark)";
 }
+/* ── Rubik's Cube facelet engine (drives the embedded algorithm animations) ──
+   Each of the 54 stickers is a fixed "slot" identified by 3D position + facing
+   normal; a move rotates the slots in its layer and we copy colors between
+   them. Verified against known algebraic identities (e.g. (R U R' U')^6,
+   Sune^6, T-perm^2 all return to solved) before wiring into the UI. */
+const CUBE_FACE_ORDER = ["F", "U", "D", "L", "R", "B"];
+const CUBE_FACE_POS = {
+  F: (r, c) => [c - 1, 1 - r, 1],
+  U: (r, c) => [c - 1, 1, r - 1],
+  D: (r, c) => [c - 1, -1, 1 - r],
+  L: (r, c) => [-1, 1 - r, c - 1],
+  R: (r, c) => [1, 1 - r, 1 - c],
+  B: (r, c) => [1 - c, 1 - r, -1]
+};
+const CUBE_FACE_NORMAL = { F: [0, 0, 1], U: [0, 1, 0], D: [0, -1, 0], L: [-1, 0, 0], R: [1, 0, 0], B: [0, 0, -1] };
+const CUBE_FACE_INV = {
+  F: (x, y, z) => [1 - y, x + 1],
+  U: (x, y, z) => [z + 1, x + 1],
+  D: (x, y, z) => [1 - z, x + 1],
+  L: (x, y, z) => [1 - y, z + 1],
+  R: (x, y, z) => [1 - y, 1 - z],
+  B: (x, y, z) => [1 - y, 1 - x]
+};
+const CUBE_FACELETS = (() => {
+  const list = [];
+  CUBE_FACE_ORDER.forEach((face) => {
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+      list.push({ face, row: r, col: c, pos: CUBE_FACE_POS[face](r, c), normal: CUBE_FACE_NORMAL[face] });
+    }
+  });
+  return list;
+})();
+function cubeFindSlot(face, row, col) {
+  return CUBE_FACELETS.findIndex((f) => f.face === face && f.row === row && f.col === col);
+}
+function cubeFindDest(pos, normal) {
+  for (const face of CUBE_FACE_ORDER) {
+    const n = CUBE_FACE_NORMAL[face];
+    if (n[0] === normal[0] && n[1] === normal[1] && n[2] === normal[2]) {
+      const [r, c] = CUBE_FACE_INV[face](pos[0], pos[1], pos[2]);
+      return cubeFindSlot(face, r, c);
+    }
+  }
+  return -1;
+}
+function cubeRotateVec(v, axis, thetaDeg) {
+  const t = thetaDeg * Math.PI / 180;
+  const cos = Math.round(Math.cos(t)), sin = Math.round(Math.sin(t));
+  const [x, y, z] = v;
+  if (axis === "x") return [x, Math.round(y * cos - z * sin), Math.round(y * sin + z * cos)];
+  if (axis === "y") return [Math.round(z * sin + x * cos), y, Math.round(z * cos - x * sin)];
+  return [Math.round(x * cos - y * sin), Math.round(x * sin + y * cos), z];
+}
+const CUBE_MOVES = {
+  U: ["y", -90, (p) => p[1] === 1], D: ["y", 90, (p) => p[1] === -1],
+  L: ["x", 90, (p) => p[0] === -1], R: ["x", -90, (p) => p[0] === 1],
+  F: ["z", -90, (p) => p[2] === 1], B: ["z", 90, (p) => p[2] === -1],
+  M: ["x", 90, (p) => p[0] === 0], E: ["y", 90, (p) => p[1] === 0], S: ["z", -90, (p) => p[2] === 0],
+  x: ["x", -90, () => true], y: ["y", -90, () => true], z: ["z", -90, () => true],
+  r: ["x", -90, (p) => p[0] === 0 || p[0] === 1], l: ["x", 90, (p) => p[0] === -1 || p[0] === 0],
+  u: ["y", -90, (p) => p[1] === 0 || p[1] === 1], d: ["y", 90, (p) => p[1] === -1 || p[1] === 0],
+  f: ["z", -90, (p) => p[2] === 0 || p[2] === 1], b: ["z", 90, (p) => p[2] === -1 || p[2] === 0]
+};
+function cubeSolved() { return CUBE_FACELETS.map((f) => f.face); }
+function cubeAffected(token) {
+  const base = token.replace(/['2]/g, "");
+  const def = CUBE_MOVES[base];
+  if (!def) return [];
+  const sel = def[2];
+  const out = [];
+  CUBE_FACELETS.forEach((f, i) => { if (sel(f.pos)) out.push(i); });
+  return out;
+}
+function cubeApplyMove(state, token) {
+  const base = token.replace(/['2]/g, "");
+  const suffix = token.slice(base.length);
+  const def = CUBE_MOVES[base];
+  if (!def) return state.slice();
+  const axis = def[0]; let theta = def[1]; const sel = def[2];
+  if (suffix === "'") theta = -theta; else if (suffix === "2") theta = theta * 2;
+  const next = state.slice();
+  CUBE_FACELETS.forEach((f, i) => {
+    if (sel(f.pos)) {
+      const newPos = cubeRotateVec(f.pos, axis, theta);
+      const newNormal = cubeRotateVec(f.normal, axis, theta);
+      const dest = cubeFindDest(newPos, newNormal);
+      if (dest >= 0) next[dest] = state[i];
+    }
+  });
+  return next;
+}
+function cubeParseAlg(movesStr) { return movesStr.trim().split(/\s+/).filter(Boolean); }
+function cubeStatesForAlg(movesStr) {
+  const tokens = cubeParseAlg(movesStr);
+  let state = cubeSolved();
+  const states = [state];
+  tokens.forEach((tok) => { state = cubeApplyMove(state, tok); states.push(state); });
+  return { tokens, states };
+}
+/* ── case-pattern helper (for the image-recognition quiz) ──
+   Inverting and reversing an algorithm's moves, then applying that to a
+   solved cube, reproduces the scrambled "case" pattern that the algorithm
+   (run forward) would solve — the same pattern shown in OLL/PLL case
+   diagrams. */
+function cubeInvertToken(tok) {
+  const base = tok.replace(/['2]/g, "");
+  const suffix = tok.slice(base.length);
+  if (suffix === "2") return tok;
+  if (suffix === "'") return base;
+  return base + "'";
+}
+function cubeInvertAlg(movesStr) {
+  return cubeParseAlg(movesStr).reverse().map(cubeInvertToken).join(" ");
+}
+function cubeCaseStateForMoves(movesStr) {
+  const tokens = cubeParseAlg(cubeInvertAlg(movesStr));
+  let state = cubeSolved();
+  tokens.forEach((tok) => { state = cubeApplyMove(state, tok); });
+  return state;
+}
+const CUBE_COLOR = { F: "var(--green)", U: "#ffffff", D: "var(--yellow)", L: "var(--orange)", R: "var(--red)", B: "var(--blue)" };
+const CUBE_FACE_SLOTS = (() => {
+  const map = {};
+  CUBE_FACE_ORDER.forEach((face) => {
+    const arr = [];
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) arr.push(cubeFindSlot(face, r, c));
+    map[face] = arr;
+  });
+  return map;
+})();
+/* ── real 3D cube geometry ──
+   Built directly from CUBE_FACELETS' own (pos, normal) data, so it stays in
+   lockstep with the facelet engine. CSS rotateX/rotateY/rotateZ use the exact
+   same rotation-matrix convention as cubeRotateVec (verified term-by-term),
+   so a move's {axis, theta} can drive the CSS transform directly with no
+   sign translation needed. */
+const CUBE_UNIT = 26;
+const CUBE_ALL_NORMALS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+const CUBE_CUBIES = (() => {
+  const seen = new Map();
+  CUBE_FACELETS.forEach((f) => { const k = f.pos.join(","); if (!seen.has(k)) seen.set(k, f.pos); });
+  return Array.from(seen.values()).map((pos) => ({
+    pos,
+    faces: CUBE_ALL_NORMALS.map((normal) => {
+      const onSurface = pos[0] * normal[0] + pos[1] * normal[1] + pos[2] * normal[2] === 1;
+      const slot = onSurface ? CUBE_FACELETS.findIndex(
+        (f) => f.pos[0] === pos[0] && f.pos[1] === pos[1] && f.pos[2] === pos[2] &&
+               f.normal[0] === normal[0] && f.normal[1] === normal[1] && f.normal[2] === normal[2]
+      ) : -1;
+      return { normal, slot };
+    })
+  }));
+})();
+function cubeFaceTransform([nx, ny, nz]) {
+  const H = CUBE_UNIT / 2;
+  if (nz === 1) return `translateZ(${H}px)`;
+  if (nz === -1) return `rotateY(180deg) translateZ(${H}px)`;
+  if (nx === 1) return `rotateY(90deg) translateZ(${H}px)`;
+  if (nx === -1) return `rotateY(-90deg) translateZ(${H}px)`;
+  if (ny === 1) return `rotateX(-90deg) translateZ(${H}px)`;
+  return `rotateX(90deg) translateZ(${H}px)`;
+}
+function Cubie3D({ cubie, state }) {
+  const [x, y, z] = cubie.pos;
+  return /* @__PURE__ */ React.createElement(
+    "div",
+    { className: "cubie3d", style: { transform: `translate3d(${x * CUBE_UNIT}px, ${y * CUBE_UNIT}px, ${z * CUBE_UNIT}px)` } },
+    cubie.faces.map((fc, i) => /* @__PURE__ */ React.createElement("div", {
+      key: i,
+      className: "cubie3d-face",
+      style: { background: fc.slot >= 0 ? CUBE_COLOR[state[fc.slot]] : "#171226", transform: cubeFaceTransform(fc.normal) }
+    }))
+  );
+}
+function QuizCubeView({ moves, size, scale }) {
+  const state = React.useMemo(() => cubeCaseStateForMoves(moves), [moves]);
+  const px = size || 150;
+  const sceneStyle = scale && scale !== 1 ? { transform: `rotateX(20deg) rotateY(-35deg) scale(${scale})` } : void 0;
+  return /* @__PURE__ */ React.createElement(
+    "div",
+    { className: "quiz-cube-stage", style: { width: px, height: px } },
+    /* @__PURE__ */ React.createElement(
+      "div",
+      { className: "cube3d-scene", style: sceneStyle },
+      /* @__PURE__ */ React.createElement(
+        "div",
+        { className: "cube3d-layer" },
+        CUBE_CUBIES.map((c, i) => /* @__PURE__ */ React.createElement(Cubie3D, { key: i, cubie: c, state }))
+      )
+    )
+  );
+}
+function AlgCube({ moves }) {
+  const data = React.useMemo(() => cubeStatesForAlg(moves), [moves]);
+  const { tokens, states } = data;
+  const [step, setStep] = React.useState(0);
+  const [playing, setPlaying] = React.useState(false);
+  const [turn, setTurn] = React.useState(null); // { axis, theta, sel } - which cubies are turning and their target angle
+  const turnGroupRef = React.useRef(null);
+  const animRef = React.useRef(null);
+  const stopAnim = React.useCallback(() => {
+    if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
+  }, []);
+
+  React.useEffect(() => { stopAnim(); setStep(0); setPlaying(false); setTurn(null); }, [moves]); // eslint-disable-line
+  React.useEffect(() => () => stopAnim(), [stopAnim]);
+
+  React.useEffect(() => {
+    if (!playing) return;
+    if (step >= tokens.length) { setPlaying(false); return; }
+    const token = tokens[step];
+    const base = token.replace(/['2]/g, "");
+    const suffix = token.slice(base.length);
+    const def = CUBE_MOVES[base];
+    if (!def) { setStep((s) => s + 1); return; }
+    const axis = def[0];
+    let theta = def[1];
+    if (suffix === "'") theta = -theta; else if (suffix === "2") theta = theta * 2;
+    setTurn({ axis, theta, sel: def[2] });
+
+    const DURATION = 480;
+    const easeOutCubic = (p) => 1 - Math.pow(1 - p, 3);
+    const axisCss = { x: "rotateX", y: "rotateY", z: "rotateZ" }[axis];
+    let start = null;
+    stopAnim();
+    const frame = (ts) => {
+      if (start === null) start = ts;
+      const p = Math.min(1, (ts - start) / DURATION);
+      const deg = theta * easeOutCubic(p);
+      if (turnGroupRef.current) turnGroupRef.current.style.transform = `${axisCss}(${deg}deg)`;
+      animRef.current = p < 1 ? requestAnimationFrame(frame) : null;
+    };
+    animRef.current = requestAnimationFrame(frame);
+
+    const t = setTimeout(() => {
+      stopAnim();
+      setStep((s) => s + 1);
+      setTurn(null);
+    }, DURATION + 60);
+    return () => { clearTimeout(t); stopAnim(); };
+  }, [playing, step, tokens, stopAnim]);
+
+  const goStep = (delta) => {
+    stopAnim();
+    setPlaying(false);
+    setTurn(null);
+    setStep((s) => Math.max(0, Math.min(tokens.length, s + delta)));
+  };
+  const reset = () => { stopAnim(); setPlaying(false); setTurn(null); setStep(0); };
+
+  const state = states[step];
+  const atEnd = step >= tokens.length;
+  const turningCubies = turn ? CUBE_CUBIES.filter((c) => turn.sel(c.pos)) : [];
+  const staticCubies = turn ? CUBE_CUBIES.filter((c) => !turn.sel(c.pos)) : CUBE_CUBIES;
+
+  return /* @__PURE__ */ React.createElement(
+    "div",
+    { className: "alg-cube-panel" },
+    /* @__PURE__ */ React.createElement(
+      "div",
+      { className: "cube3d-stage" },
+      /* @__PURE__ */ React.createElement(
+        "div",
+        { className: "cube3d-scene" },
+        /* @__PURE__ */ React.createElement(
+          "div",
+          { className: "cube3d-layer" },
+          staticCubies.map((c, i) => /* @__PURE__ */ React.createElement(Cubie3D, { key: `s${i}`, cubie: c, state }))
+        ),
+        turn && /* @__PURE__ */ React.createElement(
+          "div",
+          { className: "cube3d-layer", ref: turnGroupRef },
+          turningCubies.map((c, i) => /* @__PURE__ */ React.createElement(Cubie3D, { key: `t${i}`, cubie: c, state }))
+        )
+      )
+    ),
+    /* @__PURE__ */ React.createElement(
+      "div",
+      { className: "alg-cube-movetrack" },
+      tokens.map((t, i) => /* @__PURE__ */ React.createElement(
+        "span",
+        { key: i, className: "alg-cube-movetoken" + (i === step ? " active" : "") + (i < step ? " done" : "") },
+        t
+      ))
+    ),
+    /* @__PURE__ */ React.createElement(
+      "div",
+      { className: "alg-cube-counter" },
+      atEnd ? "\u2705 Solved position" : `Move ${step + 1} of ${tokens.length}: ${tokens[step]}`
+    ),
+    /* @__PURE__ */ React.createElement(
+      "div",
+      { className: "alg-cube-controls" },
+      /* @__PURE__ */ React.createElement("button", { type: "button", className: "alg-cube-btn", onClick: reset, title: "Reset" }, "\u27F2"),
+      /* @__PURE__ */ React.createElement("button", { type: "button", className: "alg-cube-btn", onClick: () => goStep(-1), disabled: step === 0, title: "Previous move" }, "\u25C0"),
+      /* @__PURE__ */ React.createElement("button", { type: "button", className: "alg-cube-btn primary", onClick: () => setPlaying((p) => !p), disabled: atEnd && !playing, title: playing ? "Pause" : "Play" }, playing ? "\u23F8" : "\u25B6"),
+      /* @__PURE__ */ React.createElement("button", { type: "button", className: "alg-cube-btn", onClick: () => goStep(1), disabled: atEnd, title: "Next move" }, "\u25B6|")
+    )
+  );
+}
+function AlgRow({ a }) {
+  const [open, setOpen] = React.useState(false);
+  return /* @__PURE__ */ React.createElement(
+    "div",
+    { className: "alg-block" },
+    /* @__PURE__ */ React.createElement(
+      "div",
+      { className: "alg-row" },
+      /* @__PURE__ */ React.createElement("span", { className: "alg-name" }, a.name),
+      /* @__PURE__ */ React.createElement("span", { className: "alg-moves mono" }, a.moves),
+      /* @__PURE__ */ React.createElement("button", { type: "button", className: "alg-toggle-btn", onClick: () => setOpen((o) => !o) }, open ? "Hide" : "\u25B6 Animate")
+    ),
+    open && /* @__PURE__ */ React.createElement(AlgCube, { moves: a.moves })
+  );
+}
 function DayNode({ day, color, done, current, locked, onOpen }) {
   const colorDark = darkOf(color);
   const bg = done ? color : current ? "#fff" : locked ? "#EEEEEE" : "#fff";
@@ -5709,7 +6175,7 @@ function DayNode({ day, color, done, current, locked, onOpen }) {
   )), /* @__PURE__ */ React.createElement("span", { className: "day-caption" }, day.title));
 }
 function DayDetail({ day, color, done, bookmarked, onToggle, onToggleBookmark, onBack }) {
-  return /* @__PURE__ */ React.createElement("div", { className: "lesson-wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: onBack }, "\u25C0"), /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: onToggleBookmark, title: bookmarked ? "Remove bookmark" : "Bookmark this day" }, bookmarked ? "\u2B50" : "\u2606")), /* @__PURE__ */ React.createElement("p", { className: "lesson-eyebrow" }, "Day ", day.day), /* @__PURE__ */ React.createElement("div", { className: "stamp-card", style: { "--phase-color": color } }, /* @__PURE__ */ React.createElement("h3", { className: "stamp-name" }, day.title), /* @__PURE__ */ React.createElement("p", { className: "stamp-fact" }, day.blurb), /* @__PURE__ */ React.createElement("div", { className: "stamp-divider" }), /* @__PURE__ */ React.createElement("div", { className: "day-section-label" }, "Today"), /* @__PURE__ */ React.createElement("ul", { className: "task-list" }, day.tasks.map((t, i) => /* @__PURE__ */ React.createElement("li", { key: i }, t))), day.algs.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "day-section-label" }, "Algorithms"), /* @__PURE__ */ React.createElement("div", { className: "algs" }, day.algs.map((a, i) => /* @__PURE__ */ React.createElement("div", { className: "alg-row", key: i }, /* @__PURE__ */ React.createElement("span", { className: "alg-name" }, a.name), /* @__PURE__ */ React.createElement("span", { className: "alg-moves mono" }, a.moves))))), day.mistake && /* @__PURE__ */ React.createElement("div", { className: "mistake-card" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("b", null, "\u274C Avoid:"), " ", day.mistake.wrong), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 6 } }, /* @__PURE__ */ React.createElement("span", { className: "right" }, "\u2705 Instead:"), " ", day.mistake.right))), /* @__PURE__ */ React.createElement("div", { className: "dock-bar" }, /* @__PURE__ */ React.createElement("button", { className: "btn " + (done ? "btn-secondary" : "btn-primary"), onClick: onToggle }, done ? "\u21A9\uFE0F Mark Incomplete" : "\u2705 Mark Day Complete")));
+  return /* @__PURE__ */ React.createElement("div", { className: "lesson-wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: onBack }, "\u25C0"), /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: onToggleBookmark, title: bookmarked ? "Remove bookmark" : "Bookmark this day" }, bookmarked ? "\u2B50" : "\u2606")), /* @__PURE__ */ React.createElement("p", { className: "lesson-eyebrow" }, "Day ", day.day), /* @__PURE__ */ React.createElement("div", { className: "stamp-card", style: { "--phase-color": color } }, /* @__PURE__ */ React.createElement("h3", { className: "stamp-name" }, day.title), /* @__PURE__ */ React.createElement("p", { className: "stamp-fact" }, day.blurb), /* @__PURE__ */ React.createElement("div", { className: "stamp-divider" }), /* @__PURE__ */ React.createElement("div", { className: "day-section-label" }, "Today"), /* @__PURE__ */ React.createElement("ul", { className: "task-list" }, day.tasks.map((t, i) => /* @__PURE__ */ React.createElement("li", { key: i }, t))), day.algs.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "day-section-label" }, "Algorithms"), /* @__PURE__ */ React.createElement("div", { className: "algs" }, day.algs.map((a, i) => /* @__PURE__ */ React.createElement(AlgRow, { a, key: i })))), day.mistake && /* @__PURE__ */ React.createElement("div", { className: "mistake-card" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("b", null, "\u274C Avoid:"), " ", day.mistake.wrong), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 6 } }, /* @__PURE__ */ React.createElement("span", { className: "right" }, "\u2705 Instead:"), " ", day.mistake.right))), /* @__PURE__ */ React.createElement("div", { className: "dock-bar" }, /* @__PURE__ */ React.createElement("button", { className: "btn " + (done ? "btn-secondary" : "btn-primary"), onClick: onToggle }, done ? "\u21A9\uFE0F Mark Incomplete" : "\u2705 Mark Day Complete")));
 }
 function makeQuestion(pool, direction) {
   const correct = pool[Math.floor(Math.random() * pool.length)];
@@ -5720,24 +6186,53 @@ function makeQuestion(pool, direction) {
   const options = shuffle([correct, ...distractors]);
   return { correct, options, direction };
 }
+const QUIZ_PROMPT_LABELS = {
+  nameToMoves: "Which algorithm is this?",
+  movesToName: "Which case is this?",
+  imageToName: "Which case is this? \u{1F9CA}",
+  nameToImage: "Which cube matches this algorithm?"
+};
+const QUIZ_ALL_CATEGORIES = ["All", "F2L", "OLL", "PLL"];
+const QUIZ_IMAGE_CATEGORIES = ["All", "OLL", "PLL"];
 function Quiz() {
-  const CATEGORIES = ["All", "2-Look LL", "F2L", "OLL", "PLL"];
+  const [mode, setMode] = useState("text");
   const [category, setCategory] = useState("All");
   const [score, setScore] = useState({ right: 0, total: 0 });
   const [streak, setStreak] = useState(0);
   const [best, setBest] = useState(0);
   const [picked, setPicked] = useState(null);
   const [question, setQuestion] = useState(null);
-  const pool = category === "All" ? ALG_BANK : ALG_BANK.filter((a) => a.category === category);
-  const nextQuestion = useCallback((currentPool) => {
+  const categoryCounts = React.useMemo(() => {
+    const counts = { All: ALG_BANK.length };
+    ["F2L", "OLL", "PLL"].forEach((c) => { counts[c] = ALG_BANK.filter((a) => a.category === c).length; });
+    return counts;
+  }, []);
+  const CATEGORIES = mode === "image" ? QUIZ_IMAGE_CATEGORIES : QUIZ_ALL_CATEGORIES;
+  // Image mode only quizzes OLL/PLL — an F2L "case" shown from an
+  // otherwise-solved cube isn't a recognizable pattern the way OLL/PLL
+  // top-face and permutation patterns are.
+  const effectiveCategory = mode === "image" && category === "F2L" ? "All" : category;
+  const basePool = mode === "image" ? ALG_BANK.filter((a) => a.category !== "F2L") : ALG_BANK;
+  const pool = effectiveCategory === "All" ? basePool : basePool.filter((a) => a.category === effectiveCategory);
+  const nextQuestion = useCallback((currentPool, m) => {
     const p = currentPool && currentPool.length >= 4 ? currentPool : ALG_BANK;
-    const direction = Math.random() < 0.5 ? "nameToMoves" : "movesToName";
+    const direction = m === "image"
+      ? (Math.random() < 0.5 ? "imageToName" : "nameToImage")
+      : (Math.random() < 0.5 ? "nameToMoves" : "movesToName");
     setQuestion(makeQuestion(p, direction));
     setPicked(null);
   }, []);
   useEffect(() => {
-    nextQuestion(pool);
-  }, [category]);
+    nextQuestion(pool, mode);
+  }, [effectiveCategory, mode]);
+  const handleSetMode = (m) => {
+    setMode(m);
+    if (m === "image" && category === "F2L") setCategory("All");
+  };
+  const handleSetCategory = (c) => {
+    if (categoryCounts[c] < 4) return;
+    setCategory(c);
+  };
   if (!question) return null;
   const handlePick = (opt) => {
     if (picked) return;
@@ -5749,25 +6244,49 @@ function Quiz() {
       setBest((b) => Math.max(b, next));
       return next;
     });
-    setTimeout(() => nextQuestion(pool), 950);
+    setTimeout(() => nextQuestion(pool, mode), 950);
   };
-  const prompt = question.direction === "nameToMoves" ? question.correct.name : question.correct.moves;
-  const promptLabel = question.direction === "nameToMoves" ? "Which algorithm is this?" : "Which case is this?";
-  return /* @__PURE__ */ React.createElement("div", { className: "timer-card" }, /* @__PURE__ */ React.createElement("div", { className: "timer-label" }, "Algorithm Recall Quiz"), /* @__PURE__ */ React.createElement("div", { className: "quiz-filters" }, CATEGORIES.map((c) => /* @__PURE__ */ React.createElement(
+  const showImagePrompt = question.direction === "imageToName";
+  const showImageOptions = question.direction === "nameToImage";
+  const prompt = question.direction === "movesToName"
+    ? question.correct.moves
+    : question.correct.name;
+  const promptLabel = QUIZ_PROMPT_LABELS[question.direction];
+  return /* @__PURE__ */ React.createElement("div", { className: "timer-card" }, /* @__PURE__ */ React.createElement("div", { className: "timer-label" }, "Algorithm Recall Quiz"), /* @__PURE__ */ React.createElement("div", { className: "quiz-mode-toggle" }, /* @__PURE__ */ React.createElement(
+    "button",
+    { type: "button", className: "quiz-mode-btn" + (mode === "text" ? " active" : ""), onClick: () => handleSetMode("text") },
+    "\u{1F524} Text"
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    { type: "button", className: "quiz-mode-btn" + (mode === "image" ? " active" : ""), onClick: () => handleSetMode("image") },
+    "\u{1F9E9} Image"
+  )), /* @__PURE__ */ React.createElement("div", { className: "quiz-filters" }, CATEGORIES.map((c) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: c,
-      className: "quiz-filter" + (category === c ? " active" : ""),
-      onClick: () => setCategory(c)
+      type: "button",
+      className: "quiz-filter" + (effectiveCategory === c ? " active" : "") + (categoryCounts[c] < 4 ? " disabled" : ""),
+      disabled: categoryCounts[c] < 4,
+      title: categoryCounts[c] < 4 ? "Not enough cases in this category yet" : void 0,
+      onClick: () => handleSetCategory(c)
     },
     c
-  ))), /* @__PURE__ */ React.createElement("div", { className: "quiz-stats" }, /* @__PURE__ */ React.createElement("div", null, "Score", /* @__PURE__ */ React.createElement("b", null, score.right, "/", score.total)), /* @__PURE__ */ React.createElement("div", null, "Streak", /* @__PURE__ */ React.createElement("b", null, streak)), /* @__PURE__ */ React.createElement("div", null, "Best streak", /* @__PURE__ */ React.createElement("b", null, best))), /* @__PURE__ */ React.createElement("div", { className: "quiz-prompt-label" }, promptLabel), /* @__PURE__ */ React.createElement("div", { className: "quiz-prompt" + (question.direction === "movesToName" ? " mono" : "") }, prompt), /* @__PURE__ */ React.createElement("div", { className: "quiz-options" }, question.options.map((opt, i) => {
-    const label = question.direction === "nameToMoves" ? opt.moves : opt.name;
-    let cls = "quiz-option";
+  ))), /* @__PURE__ */ React.createElement("div", { className: "quiz-stats" }, /* @__PURE__ */ React.createElement("div", null, "Score", /* @__PURE__ */ React.createElement("b", null, score.right, "/", score.total)), /* @__PURE__ */ React.createElement("div", null, "Streak", /* @__PURE__ */ React.createElement("b", null, streak)), /* @__PURE__ */ React.createElement("div", null, "Best streak", /* @__PURE__ */ React.createElement("b", null, best))), /* @__PURE__ */ React.createElement("div", { className: "quiz-prompt-label" }, promptLabel), showImagePrompt
+    ? /* @__PURE__ */ React.createElement(QuizCubeView, { moves: question.correct.moves, size: 170 })
+    : /* @__PURE__ */ React.createElement("div", { className: "quiz-prompt" + (question.direction === "movesToName" ? " mono" : "") }, prompt), /* @__PURE__ */ React.createElement("div", { className: "quiz-options" + (showImageOptions ? " quiz-options-image" : "") }, question.options.map((opt, i) => {
+    let cls = "quiz-option" + (showImageOptions ? " quiz-option-image" : "");
     if (picked) {
       if (opt === question.correct) cls += " correct";
       else if (opt === picked) cls += " wrong";
     }
+    if (showImageOptions) {
+      return /* @__PURE__ */ React.createElement(
+        "button",
+        { key: i, type: "button", className: cls, onClick: () => handlePick(opt), disabled: !!picked },
+        /* @__PURE__ */ React.createElement(QuizCubeView, { moves: opt.moves, size: 92, scale: 0.62 })
+      );
+    }
+    const label = question.direction === "nameToMoves" ? opt.moves : opt.name;
     return /* @__PURE__ */ React.createElement(
       "button",
       {
@@ -5779,6 +6298,66 @@ function Quiz() {
       label
     );
   })));
+}
+function ToolsHome({ onOpenTimer, onOpenFingerTricks, fingerReps }) {
+  const tricksMastered = FINGER_TRICKS.filter((t) => (fingerReps[t.id] || 0) >= FINGER_TRICK_TARGET).length;
+  return /* @__PURE__ */ React.createElement("div", { className: "tool-option-list" }, /* @__PURE__ */ React.createElement(
+    "button",
+    { type: "button", className: "tool-option-card", onClick: onOpenTimer },
+    /* @__PURE__ */ React.createElement("span", { className: "tool-option-emoji" }, "\u23F1\uFE0F"),
+    /* @__PURE__ */ React.createElement("div", { className: "tool-option-info" }, /* @__PURE__ */ React.createElement("div", { className: "tool-option-title" }, "Speed Timer"), /* @__PURE__ */ React.createElement("div", { className: "tool-option-sub" }, "Log cross, F2L, and full-solve splits to unlock checkpoints")),
+    /* @__PURE__ */ React.createElement("span", { className: "tool-option-arrow" }, "\u203A")
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    { type: "button", className: "tool-option-card", onClick: onOpenFingerTricks },
+    /* @__PURE__ */ React.createElement("span", { className: "tool-option-emoji" }, "\u{1F590}\uFE0F"),
+    /* @__PURE__ */ React.createElement("div", { className: "tool-option-info" }, /* @__PURE__ */ React.createElement("div", { className: "tool-option-title" }, "Finger Tricks"), /* @__PURE__ */ React.createElement("div", { className: "tool-option-sub" }, tricksMastered, " of ", FINGER_TRICKS.length, " tricks at 100 reps")),
+    /* @__PURE__ */ React.createElement("span", { className: "tool-option-arrow" }, "\u203A")
+  ));
+}
+function FingerTrickCard({ t, reps, onBump, onReset }) {
+  const [open, setOpen] = React.useState(false);
+  const count = reps[t.id] || 0;
+  const pct = Math.min(100, Math.round(count / FINGER_TRICK_TARGET * 100));
+  const done = count >= FINGER_TRICK_TARGET;
+  return /* @__PURE__ */ React.createElement(
+    "div",
+    { className: "ft-card" + (done ? " done" : "") },
+    /* @__PURE__ */ React.createElement(
+      "div",
+      { className: "ft-card-top" },
+      /* @__PURE__ */ React.createElement("span", { className: "ft-card-name" }, t.name),
+      /* @__PURE__ */ React.createElement("span", { className: "ft-card-moves mono" }, t.moves)
+    ),
+    /* @__PURE__ */ React.createElement("p", { className: "ft-card-desc" }, t.desc),
+    /* @__PURE__ */ React.createElement("button", { type: "button", className: "alg-toggle-btn", style: { marginLeft: 0, marginBottom: 10 }, onClick: () => setOpen((o) => !o) }, open ? "Hide" : "\u25B6 Animate"),
+    open && /* @__PURE__ */ React.createElement(AlgCube, { moves: t.moves }),
+    /* @__PURE__ */ React.createElement("div", { className: "progress-track" }, /* @__PURE__ */ React.createElement("div", { className: "progress-fill", style: { width: pct + "%" } })),
+    /* @__PURE__ */ React.createElement(
+      "div",
+      { className: "ft-card-row" },
+      /* @__PURE__ */ React.createElement("span", { className: "ft-card-count" }, count, " / ", FINGER_TRICK_TARGET, done ? " \u2705" : ""),
+      /* @__PURE__ */ React.createElement(
+        "div",
+        { className: "ft-card-btns" },
+        /* @__PURE__ */ React.createElement("button", { type: "button", className: "ft-btn", onClick: () => onBump(t.id, 1) }, "+1"),
+        /* @__PURE__ */ React.createElement("button", { type: "button", className: "ft-btn", onClick: () => onBump(t.id, 10) }, "+10"),
+        /* @__PURE__ */ React.createElement("button", { type: "button", className: "ft-btn ft-btn-reset", onClick: () => onReset(t.id) }, "Reset")
+      )
+    )
+  );
+}
+function FingerTricks({ reps, onBump, onReset }) {
+  return /* @__PURE__ */ React.createElement(
+    "div",
+    { className: "ft-wrap" },
+    /* @__PURE__ */ React.createElement("p", { className: "ft-intro-text" }, "One of the biggest speed jumps in solving. Learn the motion for each trick below, then bank 100 reps on it."),
+    /* @__PURE__ */ React.createElement(
+      "div",
+      { className: "ft-list" },
+      FINGER_TRICKS.map((t) => /* @__PURE__ */ React.createElement(FingerTrickCard, { t, reps, onBump, onReset, key: t.id }))
+    )
+  );
 }
 function SavedList({ bookmarks, onOpen, onRemove, onBack }) {
   const days = Object.keys(bookmarks).filter((k) => bookmarks[k]).map(Number).sort((a, b) => a - b);
@@ -5813,6 +6392,26 @@ function App() {
       return {};
     }
   });
+  const [fingerReps, setFingerReps] = useState(() => {
+    try {
+      const raw = localStorage.getItem("cube30-fingerreps");
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("cube30-fingerreps", JSON.stringify(fingerReps));
+    } catch (e) {
+    }
+  }, [fingerReps]);
+  const bumpFingerReps = (id, n) => {
+    setFingerReps((r) => ({ ...r, [id]: Math.min(999, (r[id] || 0) + n) }));
+  };
+  const resetFingerReps = (id) => {
+    setFingerReps((r) => ({ ...r, [id]: 0 }));
+  };
   useEffect(() => {
     try {
       localStorage.setItem("cube30-bookmarks", JSON.stringify(bookmarks));
@@ -5859,8 +6458,14 @@ function App() {
   if (page === "quiz") {
     return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: () => setPage("home") }, "\u2715"), /* @__PURE__ */ React.createElement("div", { style: { width: 44 } })), /* @__PURE__ */ React.createElement(Quiz, null));
   }
+  if (page === "tools") {
+    return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: () => setPage("home") }, "\u2715"), /* @__PURE__ */ React.createElement("p", { style: { flex: 1, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, margin: 0 } }, "\u{1F6E0}\uFE0F Tools"), /* @__PURE__ */ React.createElement("div", { style: { width: 44 } })), /* @__PURE__ */ React.createElement(ToolsHome, { onOpenTimer: () => setPage("timer"), onOpenFingerTricks: () => setPage("fingertricks"), fingerReps }));
+  }
+  if (page === "fingertricks") {
+    return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: () => setPage("tools") }, "\u25C0"), /* @__PURE__ */ React.createElement("p", { style: { flex: 1, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, margin: 0 } }, "\u{1F590}\uFE0F Finger Tricks"), /* @__PURE__ */ React.createElement("div", { style: { width: 44 } })), /* @__PURE__ */ React.createElement(FingerTricks, { reps: fingerReps, onBump: bumpFingerReps, onReset: resetFingerReps }));
+  }
   if (page === "timer") {
-    return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: () => setPage("home") }, "\u2715"), /* @__PURE__ */ React.createElement("p", { style: { flex: 1, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, margin: 0 } }, "\u23F1\uFE0F Timer"), /* @__PURE__ */ React.createElement("div", { style: { width: 44 } })), /* @__PURE__ */ React.createElement(TimerPanel, { splits, onRecord: recordSplit, onClear: clearSplit }));
+    return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "top-bar" }, /* @__PURE__ */ React.createElement("button", { className: "icon-btn", onClick: () => setPage("tools") }, "\u25C0"), /* @__PURE__ */ React.createElement("p", { style: { flex: 1, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, margin: 0 } }, "\u23F1\uFE0F Timer"), /* @__PURE__ */ React.createElement("div", { style: { width: 44 } })), /* @__PURE__ */ React.createElement(TimerPanel, { splits, onRecord: recordSplit, onClear: clearSplit }));
   }
   if (page === "saved") {
     return /* @__PURE__ */ React.createElement(SavedList, { bookmarks, onOpen: (n) => { setPage("home"); setSelectedDayNum(n); }, onRemove: toggleBookmark, onBack: () => setPage("home") });
@@ -5908,7 +6513,7 @@ function App() {
         onOpen: (n) => setSelectedDayNum(n)
       }
     )))));
-  })), /* @__PURE__ */ React.createElement("div", { className: "quiz-banner", style: { marginTop: 36 } }, /* @__PURE__ */ React.createElement("div", { className: "quiz-banner-title" }, "\u23F1\uFE0F Speedcube Timer"), /* @__PURE__ */ React.createElement("div", { className: "quiz-banner-sub" }, "Log cross, F2L, and full-solve splits to unlock checkpoints"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-blue", onClick: () => setPage("timer") }, "\u23F1\uFE0F Open Timer")), /* @__PURE__ */ React.createElement("div", { className: "quiz-banner", style: { marginTop: 18 } }, /* @__PURE__ */ React.createElement("div", { className: "quiz-banner-title" }, "\u{1F3B2} Quick Quiz"), /* @__PURE__ */ React.createElement("div", { className: "quiz-banner-sub" }, "Test yourself on algorithms, notation & terms learned so far"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold", onClick: () => setPage("quiz") }, "\u{1F3B2} Play Quiz")), /* @__PURE__ */ React.createElement("footer", null, "Progress and solve times are saved on this device only."));
+  })), /* @__PURE__ */ React.createElement("div", { className: "quiz-banner", style: { marginTop: 36 } }, /* @__PURE__ */ React.createElement("div", { className: "quiz-banner-title" }, "\u{1F6E0}\uFE0F Tools"), /* @__PURE__ */ React.createElement("div", { className: "quiz-banner-sub" }, "Speed timer, finger tricks & more practice tools"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-blue", onClick: () => setPage("tools") }, "\u{1F6E0}\uFE0F Open Tools")), /* @__PURE__ */ React.createElement("div", { className: "quiz-banner", style: { marginTop: 18 } }, /* @__PURE__ */ React.createElement("div", { className: "quiz-banner-title" }, "\u{1F3B2} Quick Quiz"), /* @__PURE__ */ React.createElement("div", { className: "quiz-banner-sub" }, "Test yourself with text (algorithms, notation, terms) or picture recognition"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold", onClick: () => setPage("quiz") }, "\u{1F3B2} Play Quiz")), /* @__PURE__ */ React.createElement("footer", null, "Progress and solve times are saved on this device only."));
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
 <\/script>
