@@ -138,6 +138,9 @@ h1,h2,h3{font-family:var(--font-display)}
 .quiz-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent1),var(--accent2));border-radius:999px;transition:width .4s ease}
 .quiz-question-label{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin:16px 0 10px;text-align:center}
 .quiz-flag-wrap{display:flex;justify-content:center;margin-bottom:18px}
+.quiz-flag-wrap--clickable{cursor:zoom-in}
+.quiz-flag-wrap--clickable:active .quiz-flag{transform:scale(0.94)}
+.quiz-flag-wrap--clickable .quiz-flag{transition:transform .12s ease}
 .quiz-flag{font-size:clamp(76px,24vw,100px);line-height:1;display:block;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.15));animation:bounceIn .5s ease}
 .choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:130px}
 @media(max-width:340px){.choices-grid{grid-template-columns:1fr}}
@@ -1356,7 +1359,7 @@ function buildQuick5Quiz(){
       const extraPool=ALL_COUNTRIES.filter(x=>!usedNames.has(x.name));
       wrong=[...wrong,...pickDistractorsWithLookalikes(c,extraPool,3-wrong.length,usedNames)];
     }
-    return {type:"flag",flag:c.flag,question:"Which country does this flag belong to?",answer:c.name,choices:shuffle([c,...wrong]).map(x=>x.name),fact:c.fact,capital:c.capital,attraction:c.attraction,badge:"flag"};
+    return {type:"flag",flag:c.flag,question:"Which country does this flag belong to?",answer:c.name,choices:shuffle([c,...wrong]).map(x=>x.name),fact:c.fact,trivia:c.trivia,capital:c.capital,attraction:c.attraction,badge:"flag"};
   });
 }
 
@@ -1930,7 +1933,7 @@ function renderQuiz(){
     </div>
 
     <p class="quiz-question-label">Which country is this? 🤔</p>
-    <div class="quiz-flag-wrap"><span class="quiz-flag">${q.flag}</span></div>
+    <div class="quiz-flag-wrap quiz-flag-wrap--clickable" data-zoom-flag="${q.flag}"><span class="quiz-flag">${q.flag}</span></div>
     <div class="choices-grid">${choiceBtns}</div>
     ${feedback}
   </div>`;
@@ -2044,6 +2047,7 @@ function renderQuick5Quiz(){
     <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:4px;font-weight:700">📍 Capital: <strong>${q.capital}</strong></p>
     ${q.attraction?`<div class="feedback-attraction">🌟 Must-see: <strong>${q.attraction}</strong></div>`:""}
     <p class="feedback-fact">${q.fact}</p>
+    ${q.trivia?`<p class="feedback-fact">${q.trivia}</p>`:""}
     <button class="btn ${sel===q.answer?"btn-primary":"btn-secondary"}" id="nextQ5">${STATE.quick5QIndex+1>=STATE.quick5Quiz.length?"⚡ See Results":"Next →"}</button>
   </div>`:"";
 
@@ -2055,7 +2059,7 @@ function renderQuick5Quiz(){
     </div>
 
     <p class="quiz-question-label">Which stamp is this flag? 🎟️</p>
-    <div class="quiz-flag-wrap"><span class="quiz-flag">${q.flag}</span></div>
+    <div class="quiz-flag-wrap quiz-flag-wrap--clickable" data-zoom-flag="${q.flag}"><span class="quiz-flag">${q.flag}</span></div>
     <div class="choices-grid">${choiceBtns}</div>
     ${feedback}
   </div>`;
@@ -2238,7 +2242,7 @@ function renderTypeQuiz(){
     </div>
 
     <p class="quiz-question-label">Type the country name! ⌨️</p>
-    <div class="quiz-flag-wrap"><span class="quiz-flag">${q.flag}</span></div>
+    <div class="quiz-flag-wrap quiz-flag-wrap--clickable" data-zoom-flag="${q.flag}"><span class="quiz-flag">${q.flag}</span></div>
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:130px">
       <input type="text" id="typeAnswerInput" autocomplete="off" autocapitalize="words" placeholder="Type a country…"
         value="${(STATE.typeInput||"").replace(/"/g,"&quot;")}"
@@ -2508,7 +2512,7 @@ function renderReviewQuiz(){
     </div>
 
     <p class="quiz-question-label">🔁 Which country is this? 🤔</p>
-    <div class="quiz-flag-wrap"><span class="quiz-flag">${q.flag}</span></div>
+    <div class="quiz-flag-wrap quiz-flag-wrap--clickable" data-zoom-flag="${q.flag}"><span class="quiz-flag">${q.flag}</span></div>
     <div class="choices-grid">${choiceBtns}</div>
     ${feedback}
   </div>`;
@@ -2571,7 +2575,6 @@ function submitLookalikeRound(){
   const correctCount=round.countries.filter(c=>STATE.lookalikePlaced[c.name]===c.name).length;
   STATE.lookalikeScore+=correctCount;
   STATE.lookalikeSubmitted=true;
-  if(correctCount===round.countries.length) launchConfetti(30);
   render();
 }
 
@@ -2778,6 +2781,9 @@ function bindEvents(){
   });
   const zoomBtn=$("zoomFlagBtn");
   if(zoomBtn) zoomBtn.addEventListener("click",()=>showFlagZoom(zoomBtn.dataset.flag));
+  document.querySelectorAll("[data-zoom-flag]").forEach(el=>{
+    el.addEventListener("click",(e)=>{e.stopPropagation();showFlagZoom(el.dataset.zoomFlag);});
+  });
   on("bookmarkFlagBtn","click",()=>{
     toggleBookmark($("bookmarkFlagBtn").dataset.name);
     render();
@@ -2793,7 +2799,7 @@ function bindEvents(){
       const ch=btn.dataset.choice;
       STATE.selected=ch;
       const correct=ch===STATE.quiz[STATE.qIndex].answer;
-      if(correct){STATE.score++;launchConfetti(20);}
+      if(correct){STATE.score++;}
       render();
     });
   });
@@ -2882,7 +2888,6 @@ function bindEvents(){
       if(correct){
         STATE.quick5Score++;
         STATE.correctCounts[answer]=(STATE.correctCounts[answer]||0)+1;
-        if(Math.random()<0.5) launchConfetti(15);
       }
       render();
     });
@@ -2937,7 +2942,7 @@ function bindEvents(){
     const q=STATE.typeQuiz[STATE.typeQIndex];
     STATE.typeSubmitted=true;
     const correct=normalizeAnswer(STATE.typeInput)===normalizeAnswer(q.answer);
-    if(correct){STATE.typeScore++;STATE.correctCounts[q.answer]=(STATE.correctCounts[q.answer]||0)+1;launchConfetti(15);}
+    if(correct){STATE.typeScore++;STATE.correctCounts[q.answer]=(STATE.correctCounts[q.answer]||0)+1;}
     render();
   }
   on("nextTypeQ","click",()=>{
@@ -2962,7 +2967,7 @@ function bindEvents(){
       const ch=btn.dataset.visualchoice;
       STATE.visualSelected=ch;
       const correct=ch===STATE.visualQuiz[STATE.visualQIndex].answer;
-      if(correct){STATE.visualScore++;STATE.correctCounts[ch]=(STATE.correctCounts[ch]||0)+1;launchConfetti(15);}
+      if(correct){STATE.visualScore++;STATE.correctCounts[ch]=(STATE.correctCounts[ch]||0)+1;}
       render();
     });
   });
@@ -2989,7 +2994,7 @@ function bindEvents(){
       STATE.continentSelected=ch;
       const cq=STATE.continentQuiz[STATE.continentQIndex];
       const correct=ch===cq.answer;
-      if(correct){STATE.continentScore++;STATE.correctCounts[cq.name]=(STATE.correctCounts[cq.name]||0)+1;launchConfetti(15);}
+      if(correct){STATE.continentScore++;STATE.correctCounts[cq.name]=(STATE.correctCounts[cq.name]||0)+1;}
       render();
     });
   });
@@ -3030,7 +3035,6 @@ function bindEvents(){
       if(correct){
         STATE.reviewScore++;
         STATE.reviewDayResults[day].correct++;
-        launchConfetti(20);
       }
       render();
     });
