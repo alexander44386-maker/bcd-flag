@@ -33,6 +33,14 @@ body{background:var(--bg-soft);font-family:var(--font-body);color:var(--ink);min
 }
 button{font-family:inherit;cursor:pointer;border:none;background:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 button:disabled{cursor:default;opacity:0.5}
+/* Explicit keyboard-focus indicator. :focus-visible only shows for keyboard/
+   programmatic focus (not mouse/touch taps), so this doesn't change the
+   tap experience — it just makes Tab-navigating the app usable. */
+button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+  outline:3px solid var(--blue);
+  outline-offset:2px;
+  border-radius:8px;
+}
 h1,h2,h3{font-family:var(--font-display)}
 
 /* ── ANIMATIONS ── */
@@ -53,6 +61,22 @@ h1,h2,h3{font-family:var(--font-display)}
 .slide-up{animation:slideUp .4s ease}
 .pop-in{animation:popIn .3s cubic-bezier(.34,1.56,.64,1)}
 .current-pulse{animation:pulseGlow 2.2s ease-in-out infinite}
+
+/* Respect the OS-level "reduce motion" setting: collapse every animation
+   and transition to effectively instant (rather than removing them
+   entirely, so elements still land in their correct final state) and turn
+   off infinite loops like pulseGlow/ftPulse after one pass. This is a
+   deliberately blanket rule — !important so it also overrides the many
+   inline style="animation:..." attributes used throughout the templates —
+   rather than special-casing each of the dozen or so animated elements. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 
 /* ── LAYOUT ── */
 #app{width:100%;min-height:100vh;display:flex;flex-direction:column}
@@ -236,6 +260,7 @@ h1,h2,h3{font-family:var(--font-display)}
 .time-ask-custom-inline{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:5px;background:#fff;border:2.5px solid var(--line);box-shadow:0 4px 0 var(--line);border-radius:14px;padding:8px 6px;transition:border-color .15s}
 .time-ask-custom-inline.invalid{border-color:var(--red);box-shadow:0 4px 0 var(--red-dark)}
 .time-ask-custom-inline input{width:38px;min-width:0;border:none;outline:none;background:transparent;text-align:center;font-weight:800;font-size:14px;font-family:inherit;color:var(--ink)}
+.time-ask-custom-inline input:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:6px}
 .time-ask-custom-inline span{font-weight:700;color:var(--ink-soft);font-size:11px;white-space:nowrap}
 @media (max-width:360px){
   .time-ask-row .time-ask-chip{font-size:12.5px;padding:11px 4px}
@@ -665,6 +690,11 @@ const ALL_COUNTRIES = Array.from(
   new Map(DAYS.flatMap(d=>d.countries).map(c=>[c.name,c])).values()
 );
 
+/* Name → country object, used everywhere quiz-building code needs to
+   resolve a country by name (previously a repeated ALL_COUNTRIES.find(...)
+   linear scan at every call site). */
+const COUNTRY_BY_NAME = new Map(ALL_COUNTRIES.map(c=>[c.name,c]));
+
 /* ── Country → continent lookup (used to build harder distractors) ── */
 const COUNTRY_CONTINENT = {};
 DAYS.forEach(d=>{ d.countries.forEach(c=>{ COUNTRY_CONTINENT[c.name]=d.continent; }); });
@@ -681,6 +711,11 @@ DAYS.forEach(d=>{ d.countries.forEach(c=>{ COUNTRY_CONTINENT[c.name]=d.continent
    continent-grouped path, so this is just DAYS/CONTINENTS as-is. */
 let ACTIVE_DAYS = DAYS;
 let ACTIVE_CONTINENTS = CONTINENTS;
+
+/* day number → day object. ACTIVE_DAYS is assigned once above and never
+   reassigned, so this stays valid for the app's whole lifetime — no need
+   to rebuild it per lookup. */
+const DAY_BY_ID = new Map(ACTIVE_DAYS.map(d=>[d.day,d]));
 
 /* ── Commonly-confused "lookalike" flag groups (for Game 2) ── */
 const LOOKALIKE_GROUPS = [
@@ -815,7 +850,23 @@ function saveLocalOnly(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(buildSaveData())); }catch(e){}
 }
 
+let _cloudSaveInFlight=false;
 async function saveState(){
+  // Guard against a double-tap firing two overlapping PUTs, where the
+  // request carrying the OLDER snapshot could resolve after the newer one
+  // and clobber it in Firebase. If a save is already running, just let it
+  // finish — its snapshot was already built from current STATE, or (if
+  // STATE changed since) the button can simply be tapped again afterward.
+  if(_cloudSaveInFlight) return;
+  _cloudSaveInFlight=true;
+  const saveBtnEl=document.getElementById("saveBtn");
+  const prevLabel=saveBtnEl? saveBtnEl.querySelector(".aw-name").textContent : null;
+  if(saveBtnEl){
+    saveBtnEl.disabled=true;
+    saveBtnEl.style.pointerEvents="none";
+    saveBtnEl.querySelector(".aw-name").textContent="Saving…";
+  }
+
   const SAVE_KEY = saveKeyFor();
   const CLOUD_SAVE_URL = cloudSaveUrlFor();
   const toSave=buildSaveData();
@@ -836,6 +887,16 @@ async function saveState(){
   } catch(e){
     console.error("Cloud save failed:", CLOUD_SAVE_URL, e);
     showToast("⚠️ Saved on this device only (offline)");
+  } finally {
+    _cloudSaveInFlight=false;
+    // Re-select the button: a render() may have replaced the DOM node
+    // while the save was in flight.
+    const btnNow=document.getElementById("saveBtn");
+    if(btnNow){
+      btnNow.disabled = STATE.flagSaveReady? false : true;
+      btnNow.style.pointerEvents = STATE.flagSaveReady? "" : "none";
+      btnNow.querySelector(".aw-name").textContent = prevLabel || "Save";
+    }
   }
 }
 
@@ -854,9 +915,11 @@ function toggleBookmark(name){
   saveLocalOnly();
 }
 
-async function loadState(){
+/* Synchronous: resets STATE then applies whatever is in localStorage.
+   No network — this is what lets the map render instantly regardless of
+   connection quality. */
+function loadLocalState(){
   const SAVE_KEY = saveKeyFor();
-  const CLOUD_SAVE_URL = cloudSaveUrlFor();
   // Reset in-memory state first so a reload never leaks stale data.
   STATE.unlockedDay=1;
   STATE.completedDays=[];
@@ -870,13 +933,10 @@ async function loadState(){
   STATE.continentHistory=[];
   STATE.reviewSchedule={};
   STATE.bookmarkedFlags=[];
-
-  // Try the cloud save first so progress shows up on any device.
   try{
-    const res = await fetch(CLOUD_SAVE_URL);
-    if(!res.ok) throw new Error("bad response");
-    const saved = await res.json();
-    if(saved){
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(raw){
+      const saved=JSON.parse(raw);
       STATE.unlockedDay = saved.unlockedDay ?? 1;
       STATE.completedDays = saved.completedDays ?? [];
       STATE.streak = saved.streak ?? 0;
@@ -889,32 +949,57 @@ async function loadState(){
       STATE.continentHistory = saved.continentHistory ?? [];
       STATE.reviewSchedule = saved.reviewSchedule ?? {};
       STATE.bookmarkedFlags = saved.bookmarkedFlags ?? [];
-      try{ localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); }catch(e){}
+    }
+  }catch(e){}
+  backfillReviewSchedule();
+}
+
+/* Async, fire-and-forget: fetches the cloud copy with a hard timeout so a
+   bad connection can never hang the app, then applies it silently in the
+   background. Only re-renders if the player is still on the map/dashboard
+   (never stomps an in-progress quiz) and only if the cloud copy actually
+   differs from what's already showing. */
+async function syncCloudStateInBackground(){
+  const SAVE_KEY = saveKeyFor();
+  const CLOUD_SAVE_URL = cloudSaveUrlFor();
+  try{
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),4000);
+    let res;
+    try{
+      res = await fetch(CLOUD_SAVE_URL,{signal:controller.signal});
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if(!res.ok) throw new Error("bad response");
+    const saved = await res.json();
+    if(!saved) return;
+    try{
+      const rawLocal=localStorage.getItem(SAVE_KEY);
+      if(rawLocal===JSON.stringify(saved)) return; // already up to date, skip re-render
+    }catch(e){}
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); }catch(e){}
+    if(STATE.view==="path" || STATE.view==="dashboard"){
+      STATE.unlockedDay = saved.unlockedDay ?? STATE.unlockedDay;
+      STATE.completedDays = saved.completedDays ?? STATE.completedDays;
+      STATE.streak = saved.streak ?? STATE.streak;
+      STATE.correctCounts = saved.correctCounts ?? STATE.correctCounts;
+      STATE.collapsedContinents = saved.collapsedContinents ?? STATE.collapsedContinents;
+      STATE.collapsedDashboard = saved.collapsedDashboard ?? STATE.collapsedDashboard;
+      STATE.quick5History = saved.quick5History ?? STATE.quick5History;
+      STATE.visualHistory = saved.visualHistory ?? STATE.visualHistory;
+      STATE.typeHistory = saved.typeHistory ?? STATE.typeHistory;
+      STATE.continentHistory = saved.continentHistory ?? STATE.continentHistory;
+      STATE.reviewSchedule = saved.reviewSchedule ?? STATE.reviewSchedule;
+      STATE.bookmarkedFlags = saved.bookmarkedFlags ?? STATE.bookmarkedFlags;
       backfillReviewSchedule();
-      return;
+      render();
     }
   } catch(e){
-    // Cloud unreachable (offline, or FIREBASE_DB_URL not set yet) — fall back to local copy.
+    // Cloud unreachable, slow, or FIREBASE_DB_URL not set yet — the local
+    // copy already on screen stands as-is.
     console.error("Cloud load failed:", CLOUD_SAVE_URL, e);
   }
-  try{
-    const raw=localStorage.getItem(SAVE_KEY);
-    if(!raw) return;
-    const saved=JSON.parse(raw);
-    STATE.unlockedDay = saved.unlockedDay ?? 1;
-    STATE.completedDays = saved.completedDays ?? [];
-    STATE.streak = saved.streak ?? 0;
-    STATE.correctCounts = saved.correctCounts ?? {};
-    STATE.collapsedContinents = saved.collapsedContinents ?? [];
-    STATE.collapsedDashboard = saved.collapsedDashboard ?? [];
-    STATE.quick5History = saved.quick5History ?? [];
-    STATE.visualHistory = saved.visualHistory ?? [];
-    STATE.typeHistory = saved.typeHistory ?? [];
-    STATE.continentHistory = saved.continentHistory ?? [];
-    STATE.reviewSchedule = saved.reviewSchedule ?? {};
-    STATE.bookmarkedFlags = saved.bookmarkedFlags ?? [];
-  } catch(e){}
-  backfillReviewSchedule();
 }
 
 /* Any completed day that predates this feature (or somehow has no
@@ -1129,7 +1214,6 @@ let STATE = {
   quick5ContinentFilter: [],
   lookalikeQuiz: null,
   lookalikeQIndex: 0,
-  lookalikeMatched: {},
   lookalikePlaced: {},
   lookalikeSubmitted: false,
   lookalikeScore: 0,
@@ -1172,7 +1256,7 @@ function shuffle(arr){
   return a;
 }
 
-function dayLookup(n){return ACTIVE_DAYS.find(d=>d.day===n);}
+function dayLookup(n){return DAY_BY_ID.get(n);}
 
 /* Weighted sample (no replacement) that favors countries with fewer
    correct Flag Match answers — flags with 0 or few correct answers
@@ -1215,7 +1299,7 @@ function pickDistractorsWithLookalikes(correct, pool, count, excludeNames){
   if(group){
     const lookalikeCountries=group
       .filter(n=>n!==correct.name&&!excludeNames.has(n))
-      .map(n=>ALL_COUNTRIES.find(x=>x.name===n))
+      .map(n=>COUNTRY_BY_NAME.get(n))
       .filter(Boolean);
     picks=shuffle(lookalikeCountries).slice(0,count);
   }
@@ -1375,7 +1459,7 @@ function buildLookalikeQuiz(){
   if(eligible.length<3) return [];
   const chosenGroups=shuffle(eligible).slice(0,5);
   return chosenGroups.map(group=>{
-    const groupCountries=shuffle(group.map(n=>ALL_COUNTRIES.find(c=>c.name===n)).filter(Boolean));
+    const groupCountries=shuffle(group.map(n=>COUNTRY_BY_NAME.get(n)).filter(Boolean));
     const countries=groupCountries.map(c=>({name:c.name,flag:c.flag,fact:c.fact,capital:c.capital,attraction:c.attraction}));
     return {
       countries,
@@ -1390,7 +1474,6 @@ function startLookalikeQuiz(){
   STATE.lookalikeQuiz=buildLookalikeQuiz();
   STATE.lookalikeTotal=STATE.lookalikeQuiz.reduce((sum,r)=>sum+r.countries.length,0);
   STATE.lookalikeQIndex=0;
-  STATE.lookalikeMatched={};
   STATE.lookalikePlaced={};
   STATE.lookalikeSubmitted=false;
   STATE.lookalikeScore=0;
@@ -1458,8 +1541,8 @@ function buildVisualQuiz(){
   STATE.visualHistory=[...history.filter(cl=>!usedClues.includes(cl)),...usedClues].slice(-(desiredCount*2));
 
   return chosen.map(c=>{
-    const answer=ALL_COUNTRIES.find(x=>x.name===c.answer);
-    const distractors=c.distractors.map(n=>ALL_COUNTRIES.find(x=>x.name===n)).filter(Boolean);
+    const answer=COUNTRY_BY_NAME.get(c.answer);
+    const distractors=c.distractors.map(n=>COUNTRY_BY_NAME.get(n)).filter(Boolean);
     const choices=shuffle([answer,...distractors]);
     return {clue:c.clue,answer:answer.name,fact:answer.fact,capital:answer.capital,attraction:answer.attraction,choices:choices.map(x=>({name:x.name,flag:x.flag}))};
   });
@@ -1561,17 +1644,28 @@ function render(){
   if(window.twemoji) twemoji.parse(app);
   if(STATE.view==="general") loadGeneralFrame();
   if(STATE.view==="rubik") loadRubikFrame();
+  // Every render follows a state change (or a navigation, which is harmless
+  // to re-save). Debounce a local-only save here so progress (completed
+  // days, unlockedDay, streak, etc.) can never be lost by re-entering the
+  // app before the player taps the explicit cloud Save button.
+  scheduleLocalSave();
+}
+
+let _localSaveTimer=null;
+function scheduleLocalSave(){
+  clearTimeout(_localSaveTimer);
+  _localSaveTimer=setTimeout(saveLocalOnly, 400);
 }
 
 window.addEventListener("message", (e) => {
-  if (e.data === "exitGeneral") {
-    const frame = document.getElementById("generalFrame");
-    if (frame) frame.dataset.loaded = "";
+  const generalFrame = document.getElementById("generalFrame");
+  const rubikFrame = document.getElementById("rubikFrame");
+  if (e.data === "exitGeneral" && e.source === generalFrame?.contentWindow) {
+    generalFrame.dataset.loaded = "";
     STATE.view = "timeAsk";
     render();
-  } else if (e.data === "exitRubik") {
-    const frame = document.getElementById("rubikFrame");
-    if (frame) frame.dataset.loaded = "";
+  } else if (e.data === "exitRubik" && e.source === rubikFrame?.contentWindow) {
+    rubikFrame.dataset.loaded = "";
     STATE.view = "timeAsk";
     render();
   }
@@ -1587,6 +1681,30 @@ function renderGeneralView(){
     <iframe id="generalFrame" class="general-frame" title="General Knowledge"></iframe>
   </div>`;
 }
+/* Applies Flag Atlas's dev-mode flag and current font as overrides onto an
+   embedded standalone app's raw HTML source, before it's dropped into an
+   iframe via srcdoc. Uses tolerant regexes (rather than one exact literal
+   string) so minor reformatting of the embedded app doesn't silently break
+   the override, and warns to the console if a target still isn't found —
+   so a stale override shows up as a visible signal instead of nothing. */
+function applyEmbeddedAppOverrides(html, label){
+  const devModePattern=/let\s+DEV_MODE\s*=\s*false\s*;/;
+  if(devModePattern.test(html)){
+    html=html.replace(devModePattern, `let DEV_MODE = ${STATE.devMode?"true":"false"};`);
+  } else {
+    console.warn(`[Flag Atlas] Couldn't find the DEV_MODE declaration in ${label}'s source — dev mode override was NOT applied. The embedded app may have been reformatted.`);
+  }
+
+  const f=currentFont();
+  const headPattern=/<\/head>/i;
+  if(headPattern.test(html)){
+    html=html.replace(headPattern, `<style>:root{--font-display:${f.display} !important;--font-body:${f.body} !important;}</style></head>`);
+  } else {
+    console.warn(`[Flag Atlas] Couldn't find a closing </head> tag in ${label}'s source — font override was NOT applied.`);
+  }
+  return html;
+}
+
 function loadGeneralFrame(){
   const frame=document.getElementById("generalFrame");
   const src=document.getElementById("generalKnowledgeSrc");
@@ -1595,11 +1713,7 @@ function loadGeneralFrame(){
   let html=src.textContent.replace(/<\\\/script>/g,closeTag);
 
   /* General Knowledge keeps its own localStorage key, same as always. */
-  html = html.replace("let DEV_MODE = false;", `let DEV_MODE = ${STATE.devMode?"true":"false"};`);
-
-  /* Match whichever font the player currently has selected. */
-  const f = currentFont();
-  html = html.replace("</head>", `<style>:root{--font-display:${f.display} !important;--font-body:${f.body} !important;}</style></head>`);
+  html=applyEmbeddedAppOverrides(html, "General Knowledge");
 
   frame.srcdoc=html;
   frame.dataset.loaded="1";
@@ -1623,11 +1737,7 @@ function loadRubikFrame(){
   let html=src.textContent.replace(/<\\\/script>/g,closeTag);
 
   /* Speedcubing progress keeps its own localStorage keys, same as always. */
-  html = html.replace("let DEV_MODE = false;", `let DEV_MODE = ${STATE.devMode?"true":"false"};`);
-
-  /* Match whichever font the player currently has selected. */
-  const f = currentFont();
-  html = html.replace("</head>", `<style>:root{--font-display:${f.display} !important;--font-body:${f.body} !important;}</style></head>`);
+  html=applyEmbeddedAppOverrides(html, "Rubik's Cube");
 
   frame.srcdoc=html;
   frame.dataset.loaded="1";
@@ -1741,7 +1851,7 @@ function renderPath(){
       </div>
     </header>
 
-    <div class="progress-track">
+    <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-label="Overall progress: Day ${Math.min(STATE.unlockedDay,TOTAL_DAYS)} of ${TOTAL_DAYS}">
       <div class="progress-fill" style="width:${pct}%"></div>
     </div>
     <span class="progress-label">Day ${Math.min(STATE.unlockedDay,TOTAL_DAYS)} of ${TOTAL_DAYS} · ${STATE.completedDays.length} stamps collected</span>
@@ -1812,7 +1922,7 @@ function renderDashboardPage(){
         <span class="chapter-dot"></span>
         <h2 class="chapter-title">${cont.name}</h2>
         <span class="chapter-sub">${totalCorrect} ✓ total</span>
-        <button type="button" class="icon-btn" data-resetcontinent="${cont.id}" title="Reset ${cont.name} stats" style="width:30px;height:30px;font-size:14px;flex-shrink:0;margin-right:2px">🗑️</button>
+        <button type="button" class="icon-btn" data-resetcontinent="${cont.id}" title="Reset ${cont.name} stats" aria-label="Reset ${cont.name} stats" style="width:30px;height:30px;font-size:14px;flex-shrink:0;margin-right:2px">🗑️</button>
         <span style="color:#fff;font-size:13px;flex-shrink:0;transition:transform .2s ease;transform:rotate(${collapsed?"-90deg":"0deg"})">▼</span>
       </div>
       ${collapsed?"":`<div class="dash-list">${rows}</div>`}
@@ -1821,7 +1931,7 @@ function renderDashboardPage(){
 
   return `<div class="path-wrap">
     <div class="top-bar" style="margin-bottom:14px">
-      <button class="icon-btn" id="quitDashboard">◀</button>
+      <button class="icon-btn" id="quitDashboard" aria-label="Back">◀</button>
       <p style="flex:1;text-align:center;font-family:var(--font-display);font-weight:800;font-size:18px;margin:0">📊 Dashboard</p>
       <div style="width:44px"></div>
     </div>
@@ -1835,7 +1945,7 @@ function renderDashboardPage(){
 ================================================================ */
 function renderBookmarksPage(){
   const flags=STATE.bookmarkedFlags
-    .map(name=>ALL_COUNTRIES.find(c=>c.name===name))
+    .map(name=>COUNTRY_BY_NAME.get(name))
     .filter(Boolean)
     .sort((a,b)=>a.name.localeCompare(b.name));
 
@@ -1843,7 +1953,7 @@ function renderBookmarksPage(){
       <span class="dash-flag">${c.flag}</span>
       <span class="dash-name">${c.name}</span>
       <span class="dash-capital">📍 ${c.capital}</span>
-      <button type="button" class="bookmark-remove-btn" data-unbookmark="${c.name}" title="Remove bookmark">⭐</button>
+      <button type="button" class="bookmark-remove-btn" data-unbookmark="${c.name}" title="Remove bookmark" aria-label="Remove ${c.name} from bookmarks">⭐</button>
     </div>`).join("");
 
   const body=flags.length
@@ -1852,7 +1962,7 @@ function renderBookmarksPage(){
 
   return `<div class="path-wrap">
     <div class="top-bar" style="margin-bottom:14px">
-      <button class="icon-btn" id="quitBookmarks">◀</button>
+      <button class="icon-btn" id="quitBookmarks" aria-label="Back">◀</button>
       <p style="flex:1;text-align:center;font-family:var(--font-display);font-weight:800;font-size:18px;margin:0">🔖 Saved Flags</p>
       <div style="width:44px"></div>
     </div>
@@ -1874,7 +1984,7 @@ function renderLesson(){
 
   return `<div class="lesson-wrap">
     <div class="top-bar">
-      <button class="icon-btn" id="lessonBack">◀</button>
+      <button class="icon-btn" id="lessonBack" aria-label="Back to map">◀</button>
       <div class="dots-row">${dots}</div>
       <div style="width:44px"></div>
     </div>
@@ -1882,11 +1992,11 @@ function renderLesson(){
     <p class="lesson-eyebrow">Day ${d.day} · ${d.title}</p>
 
     <div class="stamp-card stamp-enter" key="${STATE.cardIndex}" style="position:relative">
-      <button type="button" class="bookmark-btn${STATE.bookmarkedFlags.includes(c.name)?" active":""}" id="bookmarkFlagBtn" data-name="${c.name}" title="${STATE.bookmarkedFlags.includes(c.name)?"Remove bookmark":"Bookmark this flag"}">${STATE.bookmarkedFlags.includes(c.name)?"⭐":"☆"}</button>
-      <button type="button" id="zoomFlagBtn" data-flag="${c.flag}" style="background:none;border:none;padding:0;cursor:zoom-in;display:block;margin:0 auto"><span class="stamp-flag">${c.flag}</span></button>
+      <button type="button" class="bookmark-btn${STATE.bookmarkedFlags.includes(c.name)?" active":""}" id="bookmarkFlagBtn" data-name="${c.name}" title="${STATE.bookmarkedFlags.includes(c.name)?"Remove bookmark":"Bookmark this flag"}" aria-label="${STATE.bookmarkedFlags.includes(c.name)?"Remove bookmark":"Bookmark this flag"}">${STATE.bookmarkedFlags.includes(c.name)?"⭐":"☆"}</button>
+      <button type="button" id="zoomFlagBtn" data-flag="${c.flag}" aria-label="Zoom in on flag" style="background:none;border:none;padding:0;cursor:zoom-in;display:block;margin:0 auto"><span class="stamp-flag">${c.flag}</span></button>
       <div class="stamp-name-row">
         <h3 class="stamp-name" style="margin:0">${c.name}</h3>
-        <button type="button" class="pronounce-btn" id="pronounceBtn" data-country="${c.name}" title="Listen to pronunciation">🔊</button>
+        <button type="button" class="pronounce-btn" id="pronounceBtn" data-country="${c.name}" title="Listen to pronunciation" aria-label="Listen to pronunciation">🔊</button>
       </div>
       <span class="stamp-capital">📍 ${c.capital}</span>
       ${c.attraction?`<span class="stamp-attraction">🌟 ${c.attraction}</span>`:""}
@@ -1928,8 +2038,8 @@ function renderQuiz(){
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
-      <button class="icon-btn" id="quitQuiz">✕</button>
-      <div class="quiz-progress-track"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
+      <button class="icon-btn" id="quitQuiz" aria-label="Close quiz">✕</button>
+      <div class="quiz-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-label="Question ${STATE.qIndex+1} of ${STATE.quiz.length}"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
     </div>
 
     <p class="quiz-question-label">Which country is this? 🤔</p>
@@ -2009,7 +2119,7 @@ function renderQuickHub(){
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
-      <button class="icon-btn" id="quitHub">✕</button>
+      <button class="icon-btn" id="quitHub" aria-label="Close">✕</button>
       <p style="flex:1;text-align:center;font-family:var(--font-display);font-weight:800;font-size:18px;margin:0">⚡ Quick Quiz</p>
       <div style="width:44px"></div>
     </div>
@@ -2053,7 +2163,7 @@ function renderQuick5Quiz(){
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
-      <button class="icon-btn" id="quitQ5">✕</button>
+      <button class="icon-btn" id="quitQ5" aria-label="Close">✕</button>
       <div style="display:flex;gap:6px;flex:1;justify-content:center">${pips}</div>
       <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.quick5QIndex+1}/${STATE.quick5Quiz.length}</span>
     </div>
@@ -2164,7 +2274,7 @@ function renderLookalikeQuiz(){
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
-      <button class="icon-btn" id="quitLookalike">✕</button>
+      <button class="icon-btn" id="quitLookalike" aria-label="Close">✕</button>
       <div style="display:flex;gap:6px;flex:1;justify-content:center">${pips}</div>
       <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.lookalikeQIndex+1}/${total}</span>
     </div>
@@ -2236,7 +2346,7 @@ function renderTypeQuiz(){
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
-      <button class="icon-btn" id="quitType">✕</button>
+      <button class="icon-btn" id="quitType" aria-label="Close">✕</button>
       <div style="display:flex;gap:6px;flex:1;justify-content:center">${pips}</div>
       <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.typeQIndex+1}/${total}</span>
     </div>
@@ -2318,7 +2428,7 @@ function renderVisualQuiz(){
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
-      <button class="icon-btn" id="quitVisual">✕</button>
+      <button class="icon-btn" id="quitVisual" aria-label="Close">✕</button>
       <div style="display:flex;gap:6px;flex:1;justify-content:center">${pips}</div>
       <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.visualQIndex+1}/${total}</span>
     </div>
@@ -2393,7 +2503,7 @@ function renderContinentQuiz(){
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
-      <button class="icon-btn" id="quitContinent">✕</button>
+      <button class="icon-btn" id="quitContinent" aria-label="Close">✕</button>
       <div style="display:flex;gap:6px;flex:1;justify-content:center">${pips}</div>
       <span style="font-size:13px;font-weight:800;color:var(--ink-soft)">${STATE.continentQIndex+1}/${total}</span>
     </div>
@@ -2470,7 +2580,7 @@ function renderReviewHub(){
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
-      <button class="icon-btn" id="quitReviewHub">✕</button>
+      <button class="icon-btn" id="quitReviewHub" aria-label="Close">✕</button>
       <p style="flex:1;text-align:center;font-family:var(--font-display);font-weight:800;font-size:18px;margin:0">🔁 Spaced Review</p>
       <div style="width:44px"></div>
     </div>
@@ -2507,8 +2617,8 @@ function renderReviewQuiz(){
 
   return `<div class="quiz-wrap">
     <div class="top-bar">
-      <button class="icon-btn" id="quitReview">✕</button>
-      <div class="quiz-progress-track"><div class="quiz-progress-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--green),var(--blue))"></div></div>
+      <button class="icon-btn" id="quitReview" aria-label="Close review">✕</button>
+      <div class="quiz-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-label="Review question ${STATE.reviewQIndex+1} of ${STATE.reviewQuiz.length}"><div class="quiz-progress-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--green),var(--blue))"></div></div>
     </div>
 
     <p class="quiz-question-label">🔁 Which country is this? 🤔</p>
@@ -2642,23 +2752,177 @@ function initLookalikeDrag(){
 /* ================================================================
    EVENT BINDING
 ================================================================ */
+let _delegatedClickBound=false;
+function handleDelegatedClick(e){
+  // Order matters: check the more deeply-nested/specific selectors before
+  // their ancestors and `return` immediately on a match, so a click only
+  // ever does one thing — the same effect the old per-element listeners
+  // got from e.stopPropagation().
+
+  const resetContinentBtn=e.target.closest("[data-resetcontinent]");
+  if(resetContinentBtn){
+    e.stopPropagation();
+    const id=resetContinentBtn.dataset.resetcontinent;
+    const cont=CONTINENTS.find(c=>c.id===id);
+    const contName=cont?cont.name:"this continent";
+    showConfirmModal({
+      title:"🗑️ Reset stats?",
+      body:`This clears all Flag Match correct-answer counts for <strong>${contName}</strong>. This can't be undone.`,
+      confirmLabel:"Reset",
+      cancelLabel:"Cancel",
+      onConfirm:()=>{
+        ALL_COUNTRIES.filter(c=>COUNTRY_CONTINENT[c.name]===id).forEach(c=>{
+          delete STATE.correctCounts[c.name];
+        });
+        render();
+        showToast(`${contName} stats reset`);
+      }
+    });
+    return;
+  }
+
+  const timepickBtn=e.target.closest("[data-timepick]");
+  if(timepickBtn){
+    document.querySelectorAll("[data-timepick]").forEach(b=>b.classList.remove("selected"));
+    timepickBtn.classList.add("selected");
+    STATE.timerSelectedMinutes=parseInt(timepickBtn.dataset.timepick,10);
+    STATE.timerManualValue="";
+    const manualInput=document.getElementById("timeManualInput");
+    const customWrap=document.getElementById("timeCustomWrap");
+    if(manualInput) manualInput.value="";
+    if(customWrap) customWrap.classList.remove("invalid");
+    return;
+  }
+
+  const unbookmarkBtn=e.target.closest("[data-unbookmark]");
+  if(unbookmarkBtn){
+    toggleBookmark(unbookmarkBtn.dataset.unbookmark);
+    render();
+    return;
+  }
+
+  const dayBtn=e.target.closest("[data-day]");
+  if(dayBtn){
+    const day=parseInt(dayBtn.dataset.day);
+    if(day>STATE.unlockedDay&&!STATE.devMode)return;
+    STATE.activeDay=dayLookup(day);
+    STATE.cardIndex=0;
+    STATE.view="lesson";
+    render();
+    return;
+  }
+
+  const continentBtn=e.target.closest("[data-continent]");
+  if(continentBtn){
+    const id=continentBtn.dataset.continent;
+    const idx=STATE.collapsedContinents.indexOf(id);
+    if(idx>-1) STATE.collapsedContinents.splice(idx,1);
+    else STATE.collapsedContinents.push(id);
+    render();
+    return;
+  }
+
+  const dashContinentBtn=e.target.closest("[data-dashcontinent]");
+  if(dashContinentBtn){
+    const id=dashContinentBtn.dataset.dashcontinent;
+    const idx=STATE.collapsedDashboard.indexOf(id);
+    if(idx>-1) STATE.collapsedDashboard.splice(idx,1);
+    else STATE.collapsedDashboard.push(id);
+    render();
+    return;
+  }
+
+  const zoomFlagEl=e.target.closest("[data-zoom-flag]");
+  if(zoomFlagEl){
+    e.stopPropagation();
+    showFlagZoom(zoomFlagEl.dataset.zoomFlag);
+    return;
+  }
+
+  const choiceBtn=e.target.closest("[data-choice]");
+  if(choiceBtn){
+    if(STATE.selected)return;
+    const ch=choiceBtn.dataset.choice;
+    STATE.selected=ch;
+    const correct=ch===STATE.quiz[STATE.qIndex].answer;
+    if(correct){STATE.score++;}
+    render();
+    return;
+  }
+
+  const q5ChoiceBtn=e.target.closest("[data-q5choice]");
+  if(q5ChoiceBtn){
+    if(STATE.quick5Selected)return;
+    const ch=q5ChoiceBtn.dataset.q5choice;
+    STATE.quick5Selected=ch;
+    const answer=STATE.quick5Quiz[STATE.quick5QIndex].answer;
+    const correct=ch===answer;
+    if(correct){
+      STATE.quick5Score++;
+      STATE.correctCounts[answer]=(STATE.correctCounts[answer]||0)+1;
+    }
+    render();
+    return;
+  }
+
+  const visualChoiceBtn=e.target.closest("[data-visualchoice]");
+  if(visualChoiceBtn){
+    if(STATE.visualSelected)return;
+    const ch=visualChoiceBtn.dataset.visualchoice;
+    STATE.visualSelected=ch;
+    const correct=ch===STATE.visualQuiz[STATE.visualQIndex].answer;
+    if(correct){STATE.visualScore++;STATE.correctCounts[ch]=(STATE.correctCounts[ch]||0)+1;}
+    render();
+    return;
+  }
+
+  const continentChoiceBtn=e.target.closest("[data-continentchoice]");
+  if(continentChoiceBtn){
+    if(STATE.continentSelected)return;
+    const ch=continentChoiceBtn.dataset.continentchoice;
+    STATE.continentSelected=ch;
+    const cq=STATE.continentQuiz[STATE.continentQIndex];
+    const correct=ch===cq.answer;
+    if(correct){STATE.continentScore++;STATE.correctCounts[cq.name]=(STATE.correctCounts[cq.name]||0)+1;}
+    render();
+    return;
+  }
+
+  const rChoiceBtn=e.target.closest("[data-rchoice]");
+  if(rChoiceBtn){
+    if(STATE.reviewSelected)return;
+    const ch=rChoiceBtn.dataset.rchoice;
+    STATE.reviewSelected=ch;
+    const q=STATE.reviewQuiz[STATE.reviewQIndex];
+    const correct=ch===q.answer;
+    const day=q.sourceDay;
+    if(!STATE.reviewDayResults[day]) STATE.reviewDayResults[day]={correct:0,total:0};
+    STATE.reviewDayResults[day].total++;
+    if(correct){
+      STATE.reviewScore++;
+      STATE.reviewDayResults[day].correct++;
+    }
+    render();
+    return;
+  }
+}
+
 function bindEvents(){
   const $ = id=>document.getElementById(id);
   const on = (id,ev,fn)=>{const el=$(id);if(el)el.addEventListener(ev,fn);};
 
+  // The delegated handler above replaces ~12 querySelectorAll(...).forEach(
+  // btn=>btn.addEventListener("click",...)) blocks that used to be rebuilt
+  // on every single render. It's bound once (guarded here since bindEvents()
+  // itself runs on every render) directly on #app, which is never replaced
+  // — only its innerHTML is — so the one listener keeps working across
+  // every re-render for free.
+  if(!_delegatedClickBound){
+    _delegatedClickBound=true;
+    document.getElementById("app").addEventListener("click",handleDelegatedClick);
+  }
+
   /* TIME ASK (Bren) */
-  document.querySelectorAll("[data-timepick]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      document.querySelectorAll("[data-timepick]").forEach(b=>b.classList.remove("selected"));
-      btn.classList.add("selected");
-      STATE.timerSelectedMinutes=parseInt(btn.dataset.timepick,10);
-      STATE.timerManualValue="";
-      const manualInput=$("timeManualInput");
-      const customWrap=$("timeCustomWrap");
-      if(manualInput) manualInput.value="";
-      if(customWrap) customWrap.classList.remove("invalid");
-    });
-  });
   {
     const manualInput=$("timeManualInput");
     if(manualInput){
@@ -2706,69 +2970,14 @@ function bindEvents(){
   on("goHomeBtn","click",()=>{ STATE.view="timeAsk"; render(); });
   on("openBookmarksBtn","click",()=>{ STATE.view="bookmarks"; render(); });
   on("quitBookmarks","click",()=>{ STATE.view="path"; render(); });
-  document.querySelectorAll("[data-unbookmark]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      toggleBookmark(btn.dataset.unbookmark);
-      render();
-    });
-  });
   on("devModeTrigger","click",()=>{ showDevPasswordModal(); });
 
   /* PATH */
-  document.querySelectorAll("[data-day]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      const day=parseInt(btn.dataset.day);
-      if(day>STATE.unlockedDay&&!STATE.devMode)return;
-      STATE.activeDay=dayLookup(day);
-      STATE.cardIndex=0;
-      STATE.view="lesson";
-      render();
-    });
-  });
   on("openQuickHub","click",()=>{STATE.view="quickHub";render();});
   on("openReviewHub","click",()=>{STATE.view="reviewHub";render();});
   on("openDashboard","click",()=>{STATE.view="dashboard";render();});
   on("quitDashboard","click",()=>{STATE.view="path";render();});
   on("saveBtn","click",()=>saveState());
-  document.querySelectorAll("[data-continent]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      const id=btn.dataset.continent;
-      const idx=STATE.collapsedContinents.indexOf(id);
-      if(idx>-1) STATE.collapsedContinents.splice(idx,1);
-      else STATE.collapsedContinents.push(id);
-      render();
-    });
-  });
-  document.querySelectorAll("[data-dashcontinent]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      const id=btn.dataset.dashcontinent;
-      const idx=STATE.collapsedDashboard.indexOf(id);
-      if(idx>-1) STATE.collapsedDashboard.splice(idx,1);
-      else STATE.collapsedDashboard.push(id);
-      render();
-    });
-  });
-  document.querySelectorAll("[data-resetcontinent]").forEach(btn=>{
-    btn.addEventListener("click",(e)=>{
-      e.stopPropagation();
-      const id=btn.dataset.resetcontinent;
-      const cont=CONTINENTS.find(c=>c.id===id);
-      const contName=cont?cont.name:"this continent";
-      showConfirmModal({
-        title:"🗑️ Reset stats?",
-        body:`This clears all Flag Match correct-answer counts for <strong>${contName}</strong>. This can't be undone.`,
-        confirmLabel:"Reset",
-        cancelLabel:"Cancel",
-        onConfirm:()=>{
-          ALL_COUNTRIES.filter(c=>COUNTRY_CONTINENT[c.name]===id).forEach(c=>{
-            delete STATE.correctCounts[c.name];
-          });
-          render();
-          showToast(`${contName} stats reset`);
-        }
-      });
-    });
-  });
 
   /* LESSON */
   on("lessonBack","click",()=>{STATE.view="path";render();});
@@ -2781,9 +2990,6 @@ function bindEvents(){
   });
   const zoomBtn=$("zoomFlagBtn");
   if(zoomBtn) zoomBtn.addEventListener("click",()=>showFlagZoom(zoomBtn.dataset.flag));
-  document.querySelectorAll("[data-zoom-flag]").forEach(el=>{
-    el.addEventListener("click",(e)=>{e.stopPropagation();showFlagZoom(el.dataset.zoomFlag);});
-  });
   on("bookmarkFlagBtn","click",()=>{
     toggleBookmark($("bookmarkFlagBtn").dataset.name);
     render();
@@ -2793,16 +2999,6 @@ function bindEvents(){
 
   /* QUIZ */
   on("quitQuiz","click",()=>{STATE.view="path";render();});
-  document.querySelectorAll("[data-choice]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      if(STATE.selected)return;
-      const ch=btn.dataset.choice;
-      STATE.selected=ch;
-      const correct=ch===STATE.quiz[STATE.qIndex].answer;
-      if(correct){STATE.score++;}
-      render();
-    });
-  });
   on("nextQ","click",()=>{
     if(STATE.qIndex+1>=STATE.quiz.length){
       const passed=STATE.score>=Math.ceil(STATE.quiz.length*0.6);
@@ -2878,20 +3074,6 @@ function bindEvents(){
 
   /* QUICK 5 */
   on("quitQ5","click",()=>{STATE.view="quickHub";render();});
-  document.querySelectorAll("[data-q5choice]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      if(STATE.quick5Selected)return;
-      const ch=btn.dataset.q5choice;
-      STATE.quick5Selected=ch;
-      const answer=STATE.quick5Quiz[STATE.quick5QIndex].answer;
-      const correct=ch===answer;
-      if(correct){
-        STATE.quick5Score++;
-        STATE.correctCounts[answer]=(STATE.correctCounts[answer]||0)+1;
-      }
-      render();
-    });
-  });
   on("nextQ5","click",()=>{
     if(STATE.quick5QIndex+1>=STATE.quick5Quiz.length){
       if(STATE.quick5Score>=Math.ceil(STATE.quick5Quiz.length*0.75))launchConfetti(80);
@@ -2921,7 +3103,7 @@ function bindEvents(){
       if(STATE.lookalikeScore===STATE.lookalikeTotal)launchConfetti(80);
       STATE.view="lookalikeresult";render();
     } else {
-      STATE.lookalikeQIndex++;STATE.lookalikeMatched={};STATE.lookalikePlaced={};STATE.lookalikeSubmitted=false;render();
+      STATE.lookalikeQIndex++;STATE.lookalikePlaced={};STATE.lookalikeSubmitted=false;render();
     }
   });
   on("retryLookalike","click",()=>{ startLookalikeQuiz(); });
@@ -2961,16 +3143,6 @@ function bindEvents(){
 
   /* SPOT THE FLAG (Game 4) */
   on("quitVisual","click",()=>{STATE.view="quickHub";render();});
-  document.querySelectorAll("[data-visualchoice]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      if(STATE.visualSelected)return;
-      const ch=btn.dataset.visualchoice;
-      STATE.visualSelected=ch;
-      const correct=ch===STATE.visualQuiz[STATE.visualQIndex].answer;
-      if(correct){STATE.visualScore++;STATE.correctCounts[ch]=(STATE.correctCounts[ch]||0)+1;}
-      render();
-    });
-  });
   on("nextVisual","click",()=>{
     if(STATE.visualQIndex+1>=STATE.visualQuiz.length){
       if(STATE.visualScore===STATE.visualQuiz.length)launchConfetti(80);
@@ -2987,17 +3159,6 @@ function bindEvents(){
 
   /* WHAT CONTINENT? (Game 5) */
   on("quitContinent","click",()=>{STATE.view="quickHub";render();});
-  document.querySelectorAll("[data-continentchoice]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      if(STATE.continentSelected)return;
-      const ch=btn.dataset.continentchoice;
-      STATE.continentSelected=ch;
-      const cq=STATE.continentQuiz[STATE.continentQIndex];
-      const correct=ch===cq.answer;
-      if(correct){STATE.continentScore++;STATE.correctCounts[cq.name]=(STATE.correctCounts[cq.name]||0)+1;}
-      render();
-    });
-  });
   on("nextContinent","click",()=>{
     if(STATE.continentQIndex+1>=STATE.continentQuiz.length){
       if(STATE.continentScore===STATE.continentQuiz.length)launchConfetti(80);
@@ -3022,23 +3183,6 @@ function bindEvents(){
     STATE.view="reviewQuiz";render();
   });
   on("quitReview","click",()=>{STATE.view="path";render();});
-  document.querySelectorAll("[data-rchoice]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      if(STATE.reviewSelected)return;
-      const ch=btn.dataset.rchoice;
-      STATE.reviewSelected=ch;
-      const q=STATE.reviewQuiz[STATE.reviewQIndex];
-      const correct=ch===q.answer;
-      const day=q.sourceDay;
-      if(!STATE.reviewDayResults[day]) STATE.reviewDayResults[day]={correct:0,total:0};
-      STATE.reviewDayResults[day].total++;
-      if(correct){
-        STATE.reviewScore++;
-        STATE.reviewDayResults[day].correct++;
-      }
-      render();
-    });
-  });
   on("nextReviewQ","click",()=>{
     if(STATE.reviewQIndex+1>=STATE.reviewQuiz.length){
       finishReviewSession();
@@ -3051,16 +3195,19 @@ function bindEvents(){
   on("backToPathFromReview","click",()=>{STATE.view="path";render();});
 }
 
-/* Loads Bren's save and shows the map. */
+/* Loads Bren's save and shows the map. Renders from the local copy
+   immediately (so a slow/flaky connection never makes the map feel stuck),
+   then syncs the cloud copy silently in the background. */
 async function loadBrenSave(){
   const generalFrame=document.getElementById("generalFrame");
   if(generalFrame) generalFrame.dataset.loaded=""; // force General Knowledge to reload with fresh state
   const rubikFrame=document.getElementById("rubikFrame");
   if(rubikFrame) rubikFrame.dataset.loaded=""; // force Rubik's Cube to reload with fresh state
-  await loadState();
+  loadLocalState();
   STATE.flagSaveReady=true;
   STATE.view="path";
   render();
+  syncCloudStateInBackground();
 }
 
 /* ── Pronunciation (speak the country name aloud) ── */
@@ -3100,14 +3247,6 @@ async function startTimedSessionForView(minutes,view){
   STATE.view=view;
   render();
   startFloatingTimer();
-}
-function stopTimedSession(){
-  STATE.timerActive=false;
-  STATE.sessionMinutes=null;
-  STATE.sessionStartMs=null;
-  if(timerIntervalId){clearInterval(timerIntervalId);timerIntervalId=null;}
-  const el=document.getElementById("floatingTimer");
-  if(el) el.remove();
 }
 function startFloatingTimer(){
   if(timerIntervalId) clearInterval(timerIntervalId);
