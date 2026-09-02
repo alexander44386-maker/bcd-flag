@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>PSR-E383 Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+:root{
+  --font-display:'Baloo 2',sans-serif; --font-body:'Nunito','Segoe UI',sans-serif; --font-mono:'Share Tech Mono',monospace;
+  --black:#211E1B; --black-deep:#0F0D0B;
+  --ivory:#FFFDF6; --white:#FFFFFF;
+  --gold:#E7B923; --gold-dark:#C2980D; --gold-bg:#FFF3D0; --gold-text:#8A6600;
+  --red:#D6293E; --red-dark:#A81F30; --red-bg:#FCE1E5; --red-text:#9C1B29;
+  --ink:#241F1A; --ink-soft:#7C7263;
+  --line:#E7DCC6; --bg:#FBF6EA; --bg-soft:#F2E9D4;
+  --card:#FFFFFF;
+}
+body{background:var(--bg-soft);font-family:var(--font-body);color:var(--ink);min-height:100vh;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain;
+  background-image:radial-gradient(ellipse at 15% 10%,rgba(33,30,27,0.06) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 90%,rgba(214,41,62,0.06) 0%,transparent 55%),
+    radial-gradient(ellipse at 50% 40%,rgba(231,185,35,0.08) 0%,transparent 65%);
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:disabled{cursor:default;opacity:.45}
+button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--red);outline-offset:2px;border-radius:8px}
+h1,h2{font-family:var(--font-display)}
+
+@keyframes pulseGlow{0%,100%{box-shadow:0 4px 0 var(--red-dark),0 0 0 0 rgba(214,41,62,0)}50%{box-shadow:0 4px 0 var(--red-dark),0 0 0 8px rgba(214,41,62,0.18)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(0.7)}to{opacity:1;transform:scale(1)}}
+.slide-up{animation:slideUp .32s ease}
+.pop-in{animation:popIn .28s cubic-bezier(.34,1.56,.64,1)}
+.current-pulse{animation:pulseGlow 2.2s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
+
+#app{width:100%;min-height:100vh;display:flex;flex-direction:column}
+.wrap{padding:16px 12px 32px;max-width:640px;margin:0 auto;width:100%}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-display);font-weight:700;font-size:clamp(13px,3.4vw,15px);letter-spacing:.02em;border-radius:14px;padding:10px 16px;border:2px solid transparent;transition:transform .08s ease,box-shadow .08s ease;min-height:40px}
+.btn:active:not(:disabled){transform:translateY(3px)}
+.btn-black{background:var(--black);color:var(--ivory);border-color:var(--black-deep);box-shadow:0 4px 0 var(--black-deep)}
+.btn-black:active:not(:disabled){box-shadow:0 1px 0 var(--black-deep)}
+.btn-white{background:#fff;color:var(--ink);border-color:var(--line);box-shadow:0 4px 0 var(--line)}
+.btn-white:active:not(:disabled){box-shadow:0 1px 0 var(--line)}
+.btn-gold{background:var(--gold);color:var(--gold-text);border-color:var(--gold-dark);box-shadow:0 4px 0 var(--gold-dark)}
+.btn-gold:active:not(:disabled){box-shadow:0 1px 0 var(--gold-dark)}
+.btn-wide{width:100%}
+
+/* ── HEADER ── */
+.ya-header-badges{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.ya-home-btn{font-family:var(--font-display);font-weight:700;font-size:13px;background:var(--black);color:var(--ivory);border:2px solid var(--black-deep);border-radius:14px;padding:8px 14px;box-shadow:0 3px 0 var(--black-deep)}
+.ya-home-btn:active{box-shadow:0 1px 0 var(--black-deep);transform:translateY(2px)}
+.back-btn{font-family:var(--font-display);font-weight:700;font-size:13px;background:#fff;color:var(--ink);border:2px solid var(--line);border-radius:14px;padding:8px 14px;box-shadow:0 3px 0 var(--line)}
+.back-btn:active{box-shadow:0 1px 0 var(--line);transform:translateY(2px)}
+
+.ya-eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);font-weight:800;margin-bottom:2px}
+.ya-title{font-size:clamp(24px,7vw,30px);font-weight:800;color:var(--ink);letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.ya-subtitle{font-size:13px;color:var(--ink-soft);margin:4px 0 16px}
+
+/* ── PROGRESS ── */
+.progress-row{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.progress-track{flex:1;height:14px;background:#fff;border:2px solid var(--line);border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--red));border-radius:999px;transition:width .3s ease}
+.progress-label{font-family:var(--font-display);font-weight:700;font-size:12.5px;color:var(--ink-soft);white-space:nowrap}
+
+/* ── SESSION PATH (home grid) ── */
+.day-path{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:16px 8px;margin-bottom:8px}
+.day-node-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.day-node{width:54px;height:54px;border-radius:50%;border:3px solid var(--line);background:#fff;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:17px;box-shadow:0 4px 0 var(--line);transition:transform .08s ease}
+.day-node:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.day-node.current{border-color:var(--red);color:var(--red-text);box-shadow:0 4px 0 var(--red-dark)}
+.day-node.done{background:var(--black);border-color:var(--black-deep);color:var(--gold);box-shadow:0 4px 0 var(--black-deep)}
+.day-caption{font-size:10.5px;color:var(--ink-soft);text-align:center;max-width:72px;line-height:1.25}
+.day-caption b{color:var(--ink);display:block;font-weight:700}
+
+/* ── RESUME / TIP BANNER ── */
+.resume-banner{background:var(--card);border:2px solid var(--line);border-radius:20px;box-shadow:0 4px 0 var(--line);padding:16px 18px;margin:22px 0 8px;display:flex;flex-direction:column;gap:10px}
+.resume-banner-title{font-family:var(--font-display);font-weight:800;font-size:16px}
+.resume-banner-sub{font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+
+.reset-row{text-align:center;margin-top:24px}
+.reset-btn{background:transparent;color:var(--ink-soft);font-size:11.5px;text-decoration:underline;padding:6px}
+.reset-btn:hover{color:var(--red)}
+
+.ya-footer{font-size:11px;line-height:1.6;color:var(--ink-soft);margin-top:22px;padding-top:14px;border-top:1px dashed var(--line)}
+
+/* ── SESSION DETAIL ── */
+.session-card{background:var(--card);border:2px solid var(--line);border-radius:22px;box-shadow:0 4px 0 var(--line);padding:18px 18px 20px;margin-bottom:16px}
+.session-tag{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-weight:800}
+.session-title{font-size:clamp(20px,6vw,25px);font-weight:800;color:var(--ink);margin:4px 0 14px;line-height:1.1}
+
+.goal-chip{background:var(--gold-bg);border-radius:14px;padding:11px 14px;margin-bottom:14px;font-size:13px;line-height:1.55}
+.goal-chip b{display:block;font-family:var(--font-display);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);margin-bottom:3px}
+
+.intro-text{font-size:14px;line-height:1.6;margin-bottom:14px;color:var(--ink)}
+
+.steps-list{margin-bottom:4px}
+.step-row{display:flex;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line)}
+.step-row:last-child{border-bottom:none}
+.step-num{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--black);color:var(--gold);font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.step-body{flex:1}
+.step-time{display:block;font-family:var(--font-display);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--red-text);margin-bottom:3px;font-weight:700}
+.step-text{font-size:13.5px;line-height:1.55;color:var(--ink)}
+
+.keysteps-box{margin:14px 0;border:2px dashed var(--gold-dark);border-radius:14px;padding:11px 13px;font-size:12.5px;line-height:1.6;background:var(--gold-bg)}
+.keysteps-box b{display:block;font-family:var(--font-display);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);margin-bottom:3px}
+
+.tip-box{margin:14px 0;border-left:4px solid var(--red);background:var(--red-bg);border-radius:0 14px 14px 0;padding:10px 13px;font-size:12.5px;line-height:1.55}
+.tip-box b{display:block;font-family:var(--font-display);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--red-text);margin-bottom:3px}
+
+.control-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0 12px}
+.timer-chip{font-family:var(--font-mono);font-size:16px;background:var(--black);color:var(--gold-bg);border-radius:12px;padding:9px 14px;letter-spacing:.03em;min-width:66px;text-align:center}
+.timer-chip.running{color:var(--gold)}
+.timer-btn{font-family:var(--font-display);font-weight:700;font-size:12.5px;background:#fff;color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:9px 13px;box-shadow:0 3px 0 var(--line)}
+.timer-btn:active{box-shadow:0 1px 0 var(--line);transform:translateY(2px)}
+
+.mark-btn{width:100%;font-family:var(--font-display);font-weight:700;font-size:14.5px;letter-spacing:.01em;border-radius:14px;padding:13px;border:2px solid var(--red-dark);background:var(--red);color:#fff;box-shadow:0 4px 0 var(--red-dark)}
+.mark-btn:active{box-shadow:0 1px 0 var(--red-dark);transform:translateY(3px)}
+.mark-btn.done{background:var(--black);border-color:var(--black-deep);color:var(--gold);box-shadow:0 4px 0 var(--black-deep)}
+.mark-btn.done:active{box-shadow:0 1px 0 var(--black-deep)}
+
+.nav-row{display:flex;gap:8px;margin-top:4px}
+.nav-btn{flex:1;font-family:var(--font-display);font-weight:700;font-size:13.5px;background:#fff;color:var(--ink);border:2px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 4px 0 var(--line)}
+.nav-btn:active:not(:disabled){box-shadow:0 1px 0 var(--line);transform:translateY(3px)}
+.nav-btn:disabled{opacity:.35}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+let DEV_MODE = false; // no dev-only content in this app; kept for Flag Atlas's shared override hook
+
+/* ================================================================
+   DATA — unchanged 14-session PSR-E383 curriculum
+================================================================ */
+const days = [
+  {
+    tag: "Panel",
+    title: "Meet the panel",
+    goal: "By the end of this session, you can power the keyboard on, find the volume and headphone jack, and play evenly across all 61 keys.",
+    intro: "Before touching a single sound, get comfortable with power, volume, and how the layout is organized.",
+    steps: [
+      ["0–5 min", "Power on with the included AC adapter, or load 6 AA batteries — Yamaha estimates about five hours of playing time on batteries, though actual life varies with use."],
+      ["5–11 min", "Find the master volume slider, the LCD screen, and the headphone jack (labeled PHONES/OUTPUT). Plug in headphones once so quiet, private practice becomes a habit from day one."],
+      ["11–15 min", "Play up and down the 61 keys at a steady volume, just to feel the key travel before anything else is layered on."]
+    ],
+    tip: "Practicing with headphones from the start removes any hesitation about being heard — useful for the rest of this plan."
+  },
+  {
+    tag: "Touch",
+    title: "Touch and dynamics",
+    goal: "By the end of this session, you can explain what Touch Response does and pick a setting to practice with.",
+    intro: "The keys are touch-sensitive: how hard you press changes the volume, like an acoustic piano.",
+    steps: [
+      ["0–5 min", "Play the same note softly, then firmly, and listen for the volume difference — that's Touch Response working."],
+      ["5–12 min", "Open the Touch Response setting and try Soft, Medium, and Hard to hear how each changes the feel. Medium is Yamaha's default and a reasonable place to start."],
+      ["12–15 min", "Pick the setting that feels most natural to your hand and play a short scale using it."]
+    ],
+    tip: "Off removes dynamics entirely — useful for flat, even-volume playing, but not for practicing expression."
+  },
+  {
+    tag: "Voices",
+    title: "Sounds and voices",
+    goal: "By the end of this session, you can browse Voice categories by button and name the four kinds of Voice on board.",
+    intro: "650 Voices are on board: 258 panel Voices, 25 Drum/SFX kits, 20 Arpeggio voices, and 347 XGlite voices.",
+    steps: [
+      ["0–5 min", "Cycle through a few panel Voice categories (piano, organ, strings, brass) using the category buttons rather than typing numbers."],
+      ["5–12 min", "Play the same short phrase on three very different Voices to hear how much character a Voice choice adds."],
+      ["12–15 min", "Open the Drum/SFX kit category and tap a few pads just to know where it lives for later."]
+    ],
+    tip: "The LCD shows the current Voice name at a glance, so you never have to guess what's selected."
+  },
+  {
+    tag: "Dual/Split",
+    title: "Dual and Split modes",
+    goal: "By the end of this session, you can turn Dual and Split on and off and describe what each one changes.",
+    intro: "Dual layers two Voices on every key; Split divides the keyboard into two separate zones.",
+    steps: [
+      ["0–5 min", "Turn on Dual and layer, for example, piano with strings — play a chord and notice both Voices sounding together."],
+      ["5–12 min", "Turn off Dual, turn on Split, and set a bass Voice for your left hand and a lead Voice for your right."],
+      ["12–15 min", "Play a very simple left-hand root note under a right-hand melody using Split."]
+    ],
+    tip: "Split is especially useful once you start using accompaniment Styles, since your left hand can stay dedicated to chords."
+  },
+  {
+    tag: "Styles",
+    title: "Styles: your backing band",
+    goal: "By the end of this session, you can turn ACMP on, start a Style, and play a note in the chord area to hear it respond.",
+    intro: "260 accompaniment Styles add drums, bass, and chords behind you automatically, in genres from pop to jazz to Latin.",
+    steps: [
+      ["0–5 min", "Choose a Style that fits your taste, turn on ACMP (Auto Accompaniment), and start it — just listen to the groove for a minute before playing along."],
+      ["5–12 min", "With ACMP on, play single notes in the left-hand chord area (below the Split Point) and hear the backing band respond to each one."],
+      ["12–15 min", "Try a One Touch Setting, which instantly recalls a Voice and settings that match the Style you picked."]
+    ],
+    tip: "ACMP has to be on for the chord area to trigger the backing band — if nothing happens, that's the first thing to check."
+  },
+  {
+    tag: "Chord Play",
+    title: "Auto Chord Play",
+    goal: "By the end of this session, you can start Auto Chord Play and explain how it differs from playing your own chords.",
+    intro: "Auto Chord Play draws on 50 built-in chord progressions and plays one for you automatically — it shows which key and chord to play, so you can listen and learn progressions without specifying chords yourself.",
+    steps: [
+      ["0–5 min", "Pick a Style, then turn on Auto Chord Play and start it — just listen to the chord progression it builds on its own."],
+      ["5–12 min", "Watch the display for the key and chord name it's showing, and try tapping along on the indicated key."],
+      ["12–15 min", "Turn Auto Chord Play off and, using Smart Chord (one-finger chords) or Multi Finger (full chords) instead, play your own root notes or chords under the same Style to compare the two approaches."]
+    ],
+    tip: "Auto Chord Play is for listening and learning — Smart Chord and Multi Finger are how you actually play your own chords into a Style."
+  },
+  {
+    tag: "Lesson",
+    title: "The 3-Step Lesson system",
+    goal: "By the end of this session, you can run a built-in song through Listening, Timing, and Waiting for at least one hand.",
+    intro: "Built-in songs can be practiced hands separately or together, working through the keyboard's three stages: Listening, Timing, and Waiting.",
+    steps: [
+      ["0–5 min", "Pick a built-in song and start with Listening for the right hand only, just to hear the phrase before you play it."],
+      ["5–11 min", "Move on to Timing and then Waiting for the same hand. Then try the other hand settings the song supports — left hand, or both hands together."],
+      ["11–15 min", "Check the practice evaluation the keyboard gives you, and repeat any section it flagged as shaky."]
+    ],
+    tip: "Keys To Success pulls out just the tricky phrases in a song so you're not re-practicing the easy parts every time."
+  },
+  {
+    tag: "Songs",
+    title: "Built-in songs and the Song Book",
+    goal: "By the end of this session, you can find a song by number and play through it once at a slow tempo.",
+    intro: "125 onboard songs are ready to play along to, and Yamaha offers a free downloadable Easy Song Book with sheet music for those songs and related lesson material.",
+    steps: [
+      ["0–5 min", "Browse the onboard song list and preview two or three that interest you, noting their song numbers."],
+      ["5–12 min", "Play through one full song at a slow tempo, mistakes and all — the goal is finishing, not perfection."],
+      ["12–15 min", "Write down that song's number so you can return to it directly tomorrow instead of browsing again."]
+    ],
+    tip: "The Easy Song Book download gives you sheet music to follow while the keyboard plays or you play along."
+  },
+  {
+    tag: "Tutor",
+    title: "Rhythm & Touch Tutor, and Duo Mode",
+    goal: "By the end of this session, you can run a Rhythm & Touch Tutor song and read its OK / Good! feedback.",
+    intro: "Rhythm & Touch Tutor trains timing and touch together using Songs 116–125; Duo Mode splits the keyboard into two identical ranges for a teacher and student.",
+    steps: [
+      ["0–5 min", "Make sure Touch Response isn't set to Off, then choose one of Songs 116–125 and start Rhythm & Touch Tutor — the display shows when, and how strongly, to play each note."],
+      ["5–11 min", "Play along and watch for the OK feedback (correct timing) or Good! (correct timing and touch strength), then check your result at the end of the phrase."],
+      ["11–15 min", "Switch to Duo Mode and play a simple phrase with someone else, each of you using the same octave range."]
+    ],
+    tip: "Rhythm & Touch Tutor needs Touch Response on to register your touch strength at all — it's the one lesson mode where Off will hold you back."
+  },
+  {
+    tag: "Arpeggio",
+    title: "The arpeggio function",
+    goal: "By the end of this session, you can turn Arpeggio on and trigger a pattern from a held chord.",
+    intro: "Hold the notes of a chord and one of 152 Arpeggio types turns them into a moving, patterned phrase automatically.",
+    steps: [
+      ["0–5 min", "Turn on Arpeggio and hold a simple C major triad — root, third, fifth — and listen to the pattern it creates."],
+      ["5–12 min", "Try two or three different Arpeggio types and compare how the pattern changes shape with the same chord."],
+      ["12–15 min", "Layer a sustained pad Voice under the arpeggio using Dual mode from Day 4, for a fuller texture."]
+    ],
+    tip: "Arpeggios are a quick way to add movement to a slow ballad-style Voice without playing anything fast yourself."
+  },
+  {
+    tag: "S.Art Lite",
+    title: "Super Articulation Lite voices",
+    goal: "By the end of this session, you can name and play at least one of the 12 S.Art Lite Voices.",
+    intro: "The 12 Super Articulation Lite (S.Art Lite) Voices add realistic playing details — like guitar-string harmonics or saxophone bends — as you play.",
+    steps: [
+      ["0–5 min", "Find an S.Art Lite Voice, often a guitar or wind instrument, and play a slow phrase."],
+      ["5–12 min", "Listen for the extra articulation between notes, and try varying your touch to trigger different details."],
+      ["12–15 min", "Play a simple melody using an S.Art Lite Voice as if it were a solo instrument in a small ensemble."]
+    ],
+    tip: "These Voices reward slower, more deliberate playing — rushing through them hides the detail that makes them special."
+  },
+  {
+    tag: "Regist",
+    title: "Saving your setup",
+    goal: "By the end of this session, you can save a setup to Registration Memory and recall it correctly.",
+    intro: "Registration Memory stores a Voice, Style, and other panel settings in one of 10 memory slots, so you can recall the whole setup instantly.",
+    steps: [
+      ["0–5 min", "Build a setup you like — a specific Voice, Style, and tempo — from earlier days."],
+      ["5–11 min", "Hold SHIFT, press REGIST MEMORY, then choose a number from 1–0 to save it. Change everything, then press that number again to confirm it comes right back."],
+      ["11–15 min", "Save a second, contrasting setup to a different slot, so you have two ready-made starting points for future practice."]
+    ],
+    tip: "Save setups for the songs or exercises you return to often — it removes all the re-selecting before you can start playing."
+  },
+  {
+    tag: "Record",
+    title: "Recording what you play",
+    goal: "By the end of this session, you can start an internal recording, and know what Rec'n'Share and USB connectivity need to work.",
+    intro: "The keyboard has internal recording, and can connect to a smart device for Rec'n'Share, or to a computer over USB for MIDI and audio.",
+    steps: [
+      ["0–5 min", "Use the internal recorder to capture a short 30-second clip of anything you've learned this week, then play it back."],
+      ["5–12 min", "If you have a phone or tablet, look up Yamaha's Smart Device Connection Manual for your device before connecting, since Rec'n'Share needs the right cable or adapter for your model."],
+      ["12–15 min", "If you have a computer nearby, connect via USB to Host and check that your computer detects the keyboard for both MIDI and audio."]
+    ],
+    tip: "Recording even a rough take is one of the fastest ways to hear your own timing and dynamics honestly."
+  },
+  {
+    tag: "Routine",
+    title: "Metronome, tempo, and your own routine",
+    goal: "By the end of this session, you have a short written routine you can repeat tomorrow without this guide.",
+    intro: "Bring together tempo control and a steady click with everything practiced so far into a routine you can repeat.",
+    steps: [
+      ["0–5 min", "Turn on the metronome, set a comfortable tempo, and play a simple scale in time with the click."],
+      ["5–11 min", "Pick one song or exercise from this plan and play it once at a slower tempo, once at your comfortable target tempo."],
+      ["11–15 min", "Write down a short daily routine for yourself going forward: which feature to warm up with, and which song to work on next."]
+    ],
+    tip: "Fifteen focused minutes with a metronome most days beats an occasional hour — consistency is what the PSR‑E383's lesson system is built around."
+  }
+];
+
+const keySteps = {
+  11: "Hold SHIFT &rarr; press REGIST MEMORY &rarr; choose a number key, 1&ndash;0, to save. Press that same number (without SHIFT) to recall it later."
+};
+
+/* ================================================================
+   STATE
+================================================================ */
+let page = "home"; // "home" | "detail"
+let current = 0;
+const completed = new Set();
+const STORAGE_KEY = "psr-e383-progress";
+let storageAvailable = false;
+
+let timerSeconds = 15 * 60;
+let timerInterval = null;
+
+function formatTime(s){
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return String(m).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
+}
+function stopTimer(){
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+function resetTimer(){
+  stopTimer();
+  timerSeconds = 15 * 60;
+}
+function startTimer(){
+  if (timerInterval) return;
+  timerInterval = setInterval(() => {
+    if (timerSeconds > 0){
+      timerSeconds--;
+      updateTimerUI();
+    } else {
+      stopTimer();
+      updateTimerUI();
+    }
+  }, 1000);
+  updateTimerUI();
+}
+function updateTimerUI(){
+  const chip = document.getElementById("timerDisplay");
+  const toggle = document.getElementById("timerToggle");
+  if (chip){
+    chip.textContent = formatTime(timerSeconds);
+    chip.classList.toggle("running", !!timerInterval);
+  }
+  if (toggle) toggle.textContent = timerInterval ? "Pause" : "Start";
+}
+
+/* ---------- Storage ---------- */
+function testStorage(){
+  try{
+    const k = "__psr_e383_test__";
+    localStorage.setItem(k, "1");
+    localStorage.removeItem(k);
+    return true;
+  } catch(err){ return false; }
+}
+function loadProgress(){
+  storageAvailable = testStorage();
+  if (!storageAvailable) return;
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw){
+      const data = JSON.parse(raw);
+      (data.completed || []).forEach(i => completed.add(i));
+      if (typeof data.lastDay === "number" && data.lastDay >= 0 && data.lastDay < days.length){
+        current = data.lastDay;
+      }
+    }
+  } catch(err){ /* ignore, fall back to defaults */ }
+}
+function saveProgress(){
+  if (!storageAvailable) return;
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ completed: [...completed], lastDay: current }));
+  } catch(err){ /* fail silently */ }
+}
+
+/* ================================================================
+   NAVIGATION
+================================================================ */
+function exitApp(){ try{ window.parent.postMessage("exitYamaha", "*"); }catch(e){} }
+function openDay(i){ current = i; page = "detail"; resetTimer(); render(); saveProgress(); }
+function goHome(){ page = "home"; render(); }
+function toggleComplete(){
+  if (completed.has(current)) completed.delete(current);
+  else completed.add(current);
+  render();
+  saveProgress();
+}
+function prevDay(){ if (current > 0){ current--; resetTimer(); render(); saveProgress(); } }
+function nextDay(){ if (current < days.length - 1){ current++; resetTimer(); render(); saveProgress(); } }
+function resetAllProgress(){
+  completed.clear();
+  current = 0;
+  render();
+  saveProgress();
+}
+
+/* ================================================================
+   RENDER
+================================================================ */
+function renderHome(){
+  const pct = Math.round((completed.size / days.length) * 100);
+  const nodes = days.map((d, i) => {
+    const done = completed.has(i);
+    const isCurrent = i === current && !done;
+    const cls = done ? "done" : isCurrent ? "current current-pulse" : "";
+    const icon = done ? "✓" : (i + 1);
+    return `<div class="day-node-wrap">
+      <button type="button" class="day-node ${cls}" data-day="${i}">${icon}</button>
+      <span class="day-caption"><b>${d.tag}</b>${d.title.split(" ").slice(0,2).join(" ")}</span>
+    </div>`;
+  }).join("");
+
+  const resumeIdx = Math.min(current, days.length - 1);
+  const resumeDay = days[resumeIdx];
+  const resumeLabel = completed.has(resumeIdx) ? "Revisit a session" : "Continue where you left off";
+
+  return `<div class="wrap slide-up">
+    <div class="ya-header-badges">
+      <div>
+        <div class="ya-eyebrow">Yamaha</div>
+        <h1 class="ya-title">🎹 PSR-E383</h1>
+      </div>
+      <button type="button" class="ya-home-btn" id="homeExitBtn">🏠 Home</button>
+    </div>
+    <p class="ya-subtitle">14 practice sessions · 15 minutes a day</p>
+
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-label">${completed.size}/${days.length} done</div>
+    </div>
+
+    <div class="day-path">${nodes}</div>
+
+    <button type="button" class="resume-banner" id="resumeBtn" style="width:100%;text-align:left;cursor:pointer">
+      <div class="resume-banner-title">🎹 ${resumeLabel}</div>
+      <div class="resume-banner-sub">Session ${resumeIdx + 1} · ${resumeDay.title}</div>
+    </button>
+
+    <div class="reset-row">
+      <button type="button" class="reset-btn" id="resetProgressBtn">Reset all progress</button>
+    </div>
+
+    <p class="ya-footer">Feature details reflect Yamaha's official PSR&#8209;E383 Owner's and Reference Manuals. Button names and positions can vary slightly by firmware revision, so check your own manual if something doesn't match. Progress saves to this device only.</p>
+  </div>`;
+}
+
+function renderDetail(){
+  const d = days[current];
+  const isDone = completed.has(current);
+
+  const stepsHtml = d.steps.map(([time, text], idx) => `
+    <div class="step-row">
+      <span class="step-num">${String(idx + 1).padStart(2, "0")}</span>
+      <div class="step-body">
+        <span class="step-time">${time}</span>
+        <span class="step-text">${text}</span>
+      </div>
+    </div>`).join("");
+
+  const keystepsHtml = keySteps[current]
+    ? `<div class="keysteps-box"><b>Button sequence</b>${keySteps[current]}</div>`
+    : "";
+
+  return `<div class="wrap slide-up">
+    <div class="ya-header-badges">
+      <button type="button" class="back-btn" id="backBtn">◀ Sessions</button>
+      <button type="button" class="ya-home-btn" id="homeExitBtn">🏠 Home</button>
+    </div>
+
+    <div class="session-card">
+      <div class="session-tag">${d.tag} · Session ${current + 1} of ${days.length}</div>
+      <h2 class="session-title">${d.title}</h2>
+      <div class="goal-chip"><b>Goal</b>${d.goal}</div>
+      <p class="intro-text">${d.intro}</p>
+      <div class="steps-list">${stepsHtml}</div>
+      ${keystepsHtml}
+      <div class="tip-box"><b>Tip</b>${d.tip}</div>
+
+      <div class="control-strip">
+        <span class="timer-chip" id="timerDisplay">${formatTime(timerSeconds)}</span>
+        <button type="button" class="timer-btn" id="timerToggle">Start</button>
+        <button type="button" class="timer-btn" id="timerResetBtn">Reset</button>
+      </div>
+
+      <button type="button" class="mark-btn ${isDone ? "done" : ""}" id="markBtn">${isDone ? "Session marked complete" : "Mark session complete"}</button>
+    </div>
+
+    <div class="nav-row">
+      <button type="button" class="nav-btn" id="prevBtn" ${current === 0 ? "disabled" : ""}>◀ Prev</button>
+      <button type="button" class="nav-btn" id="nextBtn" ${current === days.length - 1 ? "disabled" : ""}>Next ▶</button>
+    </div>
+  </div>`;
+}
+
+function bindEvents(){
+  const app = document.getElementById("app");
+  app.querySelectorAll("[id=homeExitBtn]").forEach(b => b.addEventListener("click", exitApp));
+  const backBtn = document.getElementById("backBtn");
+  if (backBtn) backBtn.addEventListener("click", goHome);
+  const resumeBtn = document.getElementById("resumeBtn");
+  if (resumeBtn) resumeBtn.addEventListener("click", () => openDay(Math.min(current, days.length - 1)));
+  app.querySelectorAll("[data-day]").forEach(btn => {
+    btn.addEventListener("click", () => openDay(parseInt(btn.dataset.day, 10)));
+  });
+  const resetBtn = document.getElementById("resetProgressBtn");
+  if (resetBtn) resetBtn.addEventListener("click", resetAllProgress);
+
+  const markBtn = document.getElementById("markBtn");
+  if (markBtn) markBtn.addEventListener("click", toggleComplete);
+  const prevBtn = document.getElementById("prevBtn");
+  if (prevBtn) prevBtn.addEventListener("click", prevDay);
+  const nextBtn = document.getElementById("nextBtn");
+  if (nextBtn) nextBtn.addEventListener("click", nextDay);
+  const timerToggle = document.getElementById("timerToggle");
+  if (timerToggle) timerToggle.addEventListener("click", () => { timerInterval ? stopTimer() : startTimer(); updateTimerUI(); });
+  const timerResetBtn = document.getElementById("timerResetBtn");
+  if (timerResetBtn) timerResetBtn.addEventListener("click", () => { resetTimer(); updateTimerUI(); });
+}
+
+function render(){
+  const app = document.getElementById("app");
+  app.innerHTML = page === "home" ? renderHome() : renderDetail();
+  bindEvents();
+  if (page === "detail") updateTimerUI();
+  window.scrollTo(0, 0);
+}
+
+loadProgress();
+render();
+</script>
+</body>
+</html>
