@@ -64,11 +64,21 @@ h1,h2{font-family:var(--font-display)}
 .ya-title{font-size:clamp(24px,7vw,30px);font-weight:800;color:var(--ink);letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
 .ya-subtitle{font-size:13px;color:var(--ink-soft);margin:4px 0 16px}
 
+.specs-card{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 10px;margin-bottom:18px;box-shadow:0 3px 0 var(--line)}
+.specs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 4px}
+.spec-item{text-align:center}
+.spec-item b{display:block;font-family:var(--font-display);font-weight:800;font-size:19px;color:var(--red-text);line-height:1.1}
+.spec-item span{display:block;font-size:9.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+
+.complete-banner{background:linear-gradient(90deg,var(--gold-bg),var(--red-bg));border:2px solid var(--gold-dark);border-radius:16px;padding:14px 16px;margin-bottom:18px;font-size:13px;line-height:1.5;text-align:center}
+.complete-banner b{display:block;font-family:var(--font-display);font-size:15.5px;margin-bottom:4px;color:var(--ink)}
+
 /* ── PROGRESS ── */
 .progress-row{display:flex;align-items:center;gap:10px;margin-bottom:22px}
 .progress-track{flex:1;height:14px;background:#fff;border:2px solid var(--line);border-radius:999px;overflow:hidden}
 .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--red));border-radius:999px;transition:width .3s ease}
 .progress-label{font-family:var(--font-display);font-weight:700;font-size:12.5px;color:var(--ink-soft);white-space:nowrap}
+.streak-badge{font-family:var(--font-display);font-weight:800;font-size:12.5px;background:var(--black);color:var(--gold);border-radius:999px;padding:5px 10px;white-space:nowrap}
 
 /* ── SESSION PATH (home grid) ── */
 .day-path{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:16px 8px;margin-bottom:8px}
@@ -84,6 +94,26 @@ h1,h2{font-family:var(--font-display)}
 .resume-banner{background:var(--card);border:2px solid var(--line);border-radius:20px;box-shadow:0 4px 0 var(--line);padding:16px 18px;margin:22px 0 8px;display:flex;flex-direction:column;gap:10px}
 .resume-banner-title{font-family:var(--font-display);font-weight:800;font-size:16px}
 .resume-banner-sub{font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+
+.ref-icon-row{display:flex;gap:8px;margin-bottom:10px}
+.ref-icon-btn{flex:1;font-size:19px;line-height:1;background:#fff;border:2px solid var(--line);border-radius:12px;padding:9px 0;box-shadow:0 3px 0 var(--line);text-align:center}
+.ref-icon-btn:active{box-shadow:0 1px 0 var(--line);transform:translateY(2px)}
+.ref-icon-btn.active{background:var(--black);border-color:var(--black-deep);box-shadow:0 3px 0 var(--black-deep)}
+
+.ref-panel{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 16px;margin-bottom:18px;box-shadow:0 3px 0 var(--line)}
+.ref-panel-title{font-family:var(--font-display);font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:10px}
+.ref-panel dl{font-size:12.5px;line-height:1.6}
+.ref-panel dt{font-family:var(--font-display);font-weight:700;color:var(--red-text);margin-top:8px}
+.ref-panel dt:first-child{margin-top:0}
+.ref-panel dd{color:var(--ink-soft)}
+.ref-panel dt a{color:inherit;text-decoration:underline;text-decoration-color:var(--line)}
+.acc-group-title{font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-text);margin:10px 0 4px}
+.acc-group-title:first-child{margin-top:0}
+.acc-note{font-size:12px;color:var(--ink-soft);line-height:1.5;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
+
+.link-row{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+.link-btn{display:flex;align-items:center;gap:8px;background:#fff;border:2px solid var(--line);border-radius:14px;padding:11px 14px;font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--ink);box-shadow:0 3px 0 var(--line);text-decoration:none}
+.link-btn:active{box-shadow:0 1px 0 var(--line);transform:translateY(2px)}
 
 .reset-row{text-align:center;margin-top:24px}
 .reset-btn{background:transparent;color:var(--ink-soft);font-size:11.5px;text-decoration:underline;padding:6px}
@@ -112,6 +142,14 @@ h1,h2{font-family:var(--font-display)}
 .keysteps-box{margin:14px 0;border:2px dashed var(--gold-dark);border-radius:14px;padding:11px 13px;font-size:12.5px;line-height:1.6;background:var(--gold-bg)}
 .keysteps-box b{display:block;font-family:var(--font-display);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-text);margin-bottom:3px}
 
+.ref-box{margin:10px 0;border:1.5px solid var(--line);border-radius:12px;padding:9px 13px;font-size:12.5px;line-height:1.55;background:#fff}
+.ref-box b{display:block;font-family:var(--font-display);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:2px}
+
+.exercise-label{font-family:var(--font-display);font-weight:700;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:16px 0 6px}
+
+.mistake-box{margin:10px 0;border-left:4px solid var(--black);background:var(--bg-soft);border-radius:0 12px 12px 0;padding:9px 13px;font-size:12.5px;line-height:1.55}
+.mistake-box b{display:block;font-family:var(--font-display);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:2px}
+
 .tip-box{margin:14px 0;border-left:4px solid var(--red);background:var(--red-bg);border-radius:0 14px 14px 0;padding:10px 13px;font-size:12.5px;line-height:1.55}
 .tip-box b{display:block;font-family:var(--font-display);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--red-text);margin-bottom:3px}
 
@@ -120,6 +158,18 @@ h1,h2{font-family:var(--font-display)}
 .timer-chip.running{color:var(--gold)}
 .timer-btn{font-family:var(--font-display);font-weight:700;font-size:12.5px;background:#fff;color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:9px 13px;box-shadow:0 3px 0 var(--line)}
 .timer-btn:active{box-shadow:0 1px 0 var(--line);transform:translateY(2px)}
+
+.metro-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;background:var(--bg-soft);border:1.5px solid var(--line);border-radius:14px}
+.metro-label{font-family:var(--font-display);font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);width:100%}
+.metro-bpm{font-family:var(--font-mono);font-size:14px;background:var(--black);color:var(--gold);border-radius:10px;padding:7px 12px;min-width:78px;text-align:center}
+.metro-btn{font-family:var(--font-display);font-weight:700;font-size:12.5px;background:#fff;color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:8px 12px;box-shadow:0 3px 0 var(--line)}
+.metro-btn:active{box-shadow:0 1px 0 var(--line);transform:translateY(2px)}
+.metro-btn.metro-toggle{background:var(--red);color:#fff;border-color:var(--red-dark);box-shadow:0 3px 0 var(--red-dark)}
+.metro-btn.metro-toggle:active{box-shadow:0 1px 0 var(--red-dark)}
+
+.notes-label{font-family:var(--font-display);font-weight:700;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:16px 0 6px}
+.notes-area{width:100%;min-height:64px;border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;font-family:var(--font-body);font-size:13px;line-height:1.5;color:var(--ink);background:#fff;resize:vertical}
+.notes-area:focus-visible{outline:3px solid var(--red);outline-offset:1px}
 
 .mark-btn{width:100%;font-family:var(--font-display);font-weight:700;font-size:14.5px;letter-spacing:.01em;border-radius:14px;padding:13px;border:2px solid var(--red-dark);background:var(--red);color:#fff;box-shadow:0 4px 0 var(--red-dark)}
 .mark-btn:active{box-shadow:0 1px 0 var(--red-dark);transform:translateY(3px)}
@@ -130,27 +180,65 @@ h1,h2{font-family:var(--font-display)}
 .nav-btn{flex:1;font-family:var(--font-display);font-weight:700;font-size:13.5px;background:#fff;color:var(--ink);border:2px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 4px 0 var(--line)}
 .nav-btn:active:not(:disabled){box-shadow:0 1px 0 var(--line);transform:translateY(3px)}
 .nav-btn:disabled{opacity:.35}
+
+/* ── PRINT VIEW ── */
+#printArea{display:none}
+@media print{
+  body{background:#fff}
+  #app{display:none}
+  #printArea{display:block;color:#111;font-family:var(--font-body)}
+  #printArea h1{font-family:var(--font-display);font-size:22px;margin-bottom:4px}
+  #printArea .print-session{page-break-inside:avoid;border-bottom:1px solid #999;padding:10px 0 14px;margin-bottom:6px}
+  #printArea h2{font-family:var(--font-display);font-size:15px;margin:0 0 6px}
+  #printArea .print-field{font-size:11.5px;line-height:1.45;margin:3px 0}
+  #printArea .print-field b{font-weight:700}
+  #printArea ol{margin:4px 0 0 18px;padding:0;font-size:11.5px;line-height:1.5}
+}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div id="printArea"></div>
 <script>
 let DEV_MODE = false; // no dev-only content in this app; kept for Flag Atlas's shared override hook
 
 /* ================================================================
-   DATA — unchanged 14-session PSR-E383 curriculum
+   DATA — 15-session PSR-E383 curriculum (orientation session + original 14)
 ================================================================ */
 const days = [
+  {
+    tag: "Layout",
+    title: "Know your keyboard",
+    goal: "By the end of this session, you can point to the main control groups on the PSR-E383 without hunting for them — front panel, Style controls, and rear panel.",
+    intro: "This session is a map, not an exercise — a quick tour of where everything lives so the rest of this guide makes sense the first time you read it.",
+    where: "All over the panel — this session is the map, not a single button.",
+    what: "Nothing to turn on yet. This is an orientation to where the control groups live, so later sessions make sense at a glance.",
+    press: "Nothing to press yet — just look at the layout as you read the four groups below.",
+    hear: "Nothing to listen for yet.",
+    steps: [
+      ["0–4 min", "Front panel basics: [POWER] turns the keyboard on/off. MASTER VOLUME controls overall speaker/headphone volume. The LCD shows the selected Voice, Style, Song, tempo, chords and settings. [PORTABLE GRAND] instantly selects the Grand Piano Voice."],
+      ["4–8 min", "Main selection buttons: [VOICE] selects instrument sounds, [SONG] selects built-in songs, [STYLE] selects accompaniment Styles. [SHIFT] gives certain buttons a second function. The number buttons and +/− pick numbers and change values. [FUNCTION] opens deeper settings. [REGIST MEMORY] saves and recalls a whole setup. [ARTICULATION] activates the special effect on S.Art Lite Voices."],
+      ["8–12 min", "Style controls (used from Session 6 onward): [ACMP ON/OFF] turns automatic chord accompaniment on/off. [SYNC START] makes the Style wait for you to play. [START/STOP] starts/stops the Style. [INTRO/ENDING/rit.] plays an intro or ending. [MAIN/AUTO FILL] changes the accompaniment section or fill."],
+      ["12–15 min", "Rear panel and ports: DC IN (power adapter), PHONES/OUTPUT (headphones or external speakers), AUX IN (line-in from another audio source), USB TO HOST (connect to a computer), SUSTAIN (optional sustain pedal), and the battery compartment (6 AA batteries)."]
+    ],
+    mistake: "Trying to memorize every button name today — you don't need to. Treat this session as a reference to flip back to.",
+    tip: "You don't need to memorize any of this today — just get a rough sense of where each group of controls lives. Every later session tells you exactly which button to press and where it is."
+  },
   {
     tag: "Panel",
     title: "Meet the panel",
     goal: "By the end of this session, you can power the keyboard on, find the volume and headphone jack, and play evenly across all 61 keys.",
     intro: "Before touching a single sound, get comfortable with power, volume, and how the layout is organized.",
+    where: "[POWER] and MASTER VOLUME are on the top panel near the left edge; PHONES/OUTPUT is on the rear panel.",
+    what: "[POWER] turns the keyboard on and off. MASTER VOLUME sets how loud it plays through the speakers or headphones.",
+    press: "Press [POWER] once to turn on. Slide MASTER VOLUME to a low-to-moderate level. Plug headphones into PHONES/OUTPUT on the rear panel.",
+    hear: "The LCD lights up when the keyboard powers on. With nothing plugged in you'll hear the built-in speakers; with headphones in, sound only comes through them.",
     steps: [
       ["0–5 min", "Power on with the included AC adapter, or load 6 AA batteries — Yamaha estimates about five hours of playing time on batteries, though actual life varies with use."],
       ["5–11 min", "Find the master volume slider, the LCD screen, and the headphone jack (labeled PHONES/OUTPUT). Plug in headphones once so quiet, private practice becomes a habit from day one."],
       ["11–15 min", "Play up and down the 61 keys at a steady volume, just to feel the key travel before anything else is layered on."]
     ],
+    mistake: "Starting at full volume — begin low and raise it gradually, especially the first time you plug in headphones.",
     tip: "Practicing with headphones from the start removes any hesitation about being heard — useful for the rest of this plan."
   },
   {
@@ -158,23 +246,33 @@ const days = [
     title: "Touch and dynamics",
     goal: "By the end of this session, you can explain what Touch Response does and pick a setting to practice with.",
     intro: "The keys are touch-sensitive: how hard you press changes the volume, like an acoustic piano.",
+    where: "[FUNCTION] button, front panel.",
+    what: "Touch Response changes how loud a note sounds based on how hard you press the key — like an acoustic piano.",
+    press: "Press [FUNCTION] → use [+]/[−] to find TouchRes (Function 004) → press [+/YES] or [−/NO] to step through Soft, Medium, Hard, and Off.",
+    hear: "The LCD shows \"TouchRes\" and the current setting name. Play the same note softly and firmly — Soft and Hard should sound clearly different in volume; Off should sound the same either way.",
     steps: [
       ["0–5 min", "Play the same note softly, then firmly, and listen for the volume difference — that's Touch Response working."],
-      ["5–12 min", "Open the Touch Response setting and try Soft, Medium, and Hard to hear how each changes the feel. Medium is Yamaha's default and a reasonable place to start."],
+      ["5–12 min", "Step through Soft, Medium, and Hard using the button sequence above, playing a few notes after each one. Medium is Yamaha's default and a reasonable place to start."],
       ["12–15 min", "Pick the setting that feels most natural to your hand and play a short scale using it."]
     ],
-    tip: "Off removes dynamics entirely — useful for flat, even-volume playing, but not for practicing expression."
+    mistake: "Leaving Touch Response on Off while trying to practice dynamics — Off makes every note the same volume no matter how hard you press.",
+    tip: "Soft makes it easy to play loud, Hard takes a firmer press to get full volume, and Off removes dynamics entirely — useful for flat, even-volume playing, but not for practicing expression."
   },
   {
     tag: "Voices",
     title: "Sounds and voices",
     goal: "By the end of this session, you can browse Voice categories by button and name the four kinds of Voice on board.",
-    intro: "650 Voices are on board: 258 panel Voices, 25 Drum/SFX kits, 20 Arpeggio voices, and 347 XGlite voices.",
+    intro: "A Voice is simply the sound you hear when you play a key — piano, guitar, trumpet, saxophone, strings, bass, and so on. 650 Voices are on board, split into four groups: 258 panel Voices (the main sounds for normal playing), 25 Drum/SFX kits (each key triggers a different drum or effect instead of a note), 20 Arpeggio Voices (built for the Arpeggio feature), and 347 XGlite Voices (an additional set of preset sounds, not simply \"extra\" or \"better\" ones).",
+    where: "[VOICE] button, front panel, with the category buttons above the keys.",
+    what: "Selects which instrument sound plays when you press a key.",
+    press: "Press [VOICE], then press a category button (Piano, Organ, Guitar, etc.), or use the number pad or +/− to pick a Voice directly by number.",
+    hear: "The LCD shows the Voice name and number. Playing a key should sound like the selected instrument.",
     steps: [
-      ["0–5 min", "Cycle through a few panel Voice categories (piano, organ, strings, brass) using the category buttons rather than typing numbers."],
+      ["0–5 min", "Press [VOICE], then cycle through a few panel Voice categories (piano, organ, strings, brass) using the category buttons rather than typing numbers."],
       ["5–12 min", "Play the same short phrase on three very different Voices to hear how much character a Voice choice adds."],
-      ["12–15 min", "Open the Drum/SFX kit category and tap a few pads just to know where it lives for later."]
+      ["12–15 min", "Open the Drum/SFX kit category and tap a few pads just to know where it lives for later — remember, here each key is a different drum sound, not a musical note."]
     ],
+    mistake: "Assuming XGlite Voices are somehow \"better\" than panel Voices — they're just a separate group of preset sounds, not an upgrade.",
     tip: "The LCD shows the current Voice name at a glance, so you never have to guess what's selected."
   },
   {
@@ -182,11 +280,16 @@ const days = [
     title: "Dual and Split modes",
     goal: "By the end of this session, you can turn Dual and Split on and off and describe what each one changes.",
     intro: "Dual layers two Voices on every key; Split divides the keyboard into two separate zones.",
+    where: "[DUAL] and [SPLIT] buttons, front panel.",
+    what: "Dual layers two Voices on every key. Split divides the keyboard into two separate zones, each with its own Voice.",
+    press: "Press [DUAL] to layer a second Voice. Press [SPLIT] to divide the keyboard at the Split Point, then select Voices for each zone.",
+    hear: "The LCD shows a DUAL or SPLIT indicator when active. In Dual you'll hear two Voices together on every key; in Split you'll hear a different Voice on each side of the Split Point.",
     steps: [
-      ["0–5 min", "Turn on Dual and layer, for example, piano with strings — play a chord and notice both Voices sounding together."],
-      ["5–12 min", "Turn off Dual, turn on Split, and set a bass Voice for your left hand and a lead Voice for your right."],
+      ["0–5 min", "Press [DUAL] to layer a second Voice — for example, piano with strings — then play a chord and notice both Voices sounding together."],
+      ["5–12 min", "Press [DUAL] again to turn it off, then press [SPLIT] and set a bass Voice for your left hand and a lead Voice for your right."],
       ["12–15 min", "Play a very simple left-hand root note under a right-hand melody using Split."]
     ],
+    mistake: "Leaving Dual on while testing Split — with both active it's hard to tell which effect changed the sound. Turn one off before trying the other.",
     tip: "Split is especially useful once you start using accompaniment Styles, since your left hand can stay dedicated to chords."
   },
   {
@@ -194,23 +297,33 @@ const days = [
     title: "Styles: your backing band",
     goal: "By the end of this session, you can turn ACMP on, start a Style, and play a note in the chord area to hear it respond.",
     intro: "260 accompaniment Styles add drums, bass, and chords behind you automatically, in genres from pop to jazz to Latin.",
+    where: "[ACMP ON/OFF] and [START/STOP] in the Style-control section, plus [STYLE] to choose a Style.",
+    what: "ACMP (Auto Accompaniment) tells the keyboard to listen to what you play in the left-hand chord area and have the Style play matching bass and backing parts.",
+    press: "Find [ACMP ON/OFF] in the Style-control section → press once to turn it on → press [START/STOP] to start the Style.",
+    hear: "The LCD shows the Style name and an ACMP indicator. Once ACMP is on and the Style is running, playing a note below the Split Point should bring in drums, bass, and chords.",
     steps: [
-      ["0–5 min", "Choose a Style that fits your taste, turn on ACMP (Auto Accompaniment), and start it — just listen to the groove for a minute before playing along."],
+      ["0–5 min", "Choose a Style that fits your taste, then find [ACMP ON/OFF] in the Style-control section and press it once. Press [START/STOP] and just listen to the groove for a minute before playing along."],
       ["5–12 min", "With ACMP on, play single notes in the left-hand chord area (below the Split Point) and hear the backing band respond to each one."],
       ["12–15 min", "Try a One Touch Setting, which instantly recalls a Voice and settings that match the Style you picked."]
     ],
+    mistake: "Playing chords above the Split Point and expecting ACMP to respond — the chord area is strictly the left-hand zone below the Split Point.",
     tip: "ACMP has to be on for the chord area to trigger the backing band — if nothing happens, that's the first thing to check."
   },
   {
     tag: "Chord Play",
     title: "Auto Chord Play",
     goal: "By the end of this session, you can start Auto Chord Play and explain how it differs from playing your own chords.",
-    intro: "Auto Chord Play draws on 50 built-in chord progressions and plays one for you automatically — it shows which key and chord to play, so you can listen and learn progressions without specifying chords yourself.",
+    intro: "Auto Chord Play draws on 50 built-in chord progressions and plays one for you automatically — it shows which key and chord to play on the keyboard's own LCD screen, so you can listen and learn progressions without specifying chords yourself.",
+    where: "Auto Chord Play is turned on from the Style settings, alongside the [ACMP ON/OFF] and [START/STOP] controls.",
+    what: "Plays one of 50 built-in chord progressions for you automatically, so you can listen and learn without specifying chords yourself.",
+    press: "Turn on Auto Chord Play from the Style settings, then press [START/STOP] to hear the progression play.",
+    hear: "The LCD displays the current key and chord name as the progression runs — look at the keyboard's own screen, not your phone or computer.",
     steps: [
       ["0–5 min", "Pick a Style, then turn on Auto Chord Play and start it — just listen to the chord progression it builds on its own."],
-      ["5–12 min", "Watch the display for the key and chord name it's showing, and try tapping along on the indicated key."],
+      ["5–12 min", "Look at the keyboard's built-in LCD for the key and chord name it's showing, and try tapping along on the indicated key."],
       ["12–15 min", "Turn Auto Chord Play off and, using Smart Chord (one-finger chords) or Multi Finger (full chords) instead, play your own root notes or chords under the same Style to compare the two approaches."]
     ],
+    mistake: "Confusing Auto Chord Play with playing your own chords — it has to be turned off before Smart Chord or Multi Finger will respond to what you play.",
     tip: "Auto Chord Play is for listening and learning — Smart Chord and Multi Finger are how you actually play your own chords into a Style."
   },
   {
@@ -218,11 +331,16 @@ const days = [
     title: "The 3-Step Lesson system",
     goal: "By the end of this session, you can run a built-in song through Listening, Timing, and Waiting for at least one hand.",
     intro: "Built-in songs can be practiced hands separately or together, working through the keyboard's three stages: Listening, Timing, and Waiting.",
+    where: "[SONG] button, plus the lesson-mode options shown on the LCD once a song is selected.",
+    what: "Runs a built-in song through three stages — Listening, Timing, and Waiting — to build up each hand's part before playing hands together.",
+    press: "Press [SONG], select a song number, then choose Listening, Timing, or Waiting from the lesson options on the display.",
+    hear: "The LCD shows which stage and which hand is active. In Waiting mode, the song pauses and waits until you play the correct note.",
     steps: [
       ["0–5 min", "Pick a built-in song and start with Listening for the right hand only, just to hear the phrase before you play it."],
       ["5–11 min", "Move on to Timing and then Waiting for the same hand. Then try the other hand settings the song supports — left hand, or both hands together."],
       ["11–15 min", "Check the practice evaluation the keyboard gives you, and repeat any section it flagged as shaky."]
     ],
+    mistake: "Jumping straight to both hands together before either hand is comfortable alone — the three stages are meant to be done in order.",
     tip: "Keys To Success pulls out just the tricky phrases in a song so you're not re-practicing the easy parts every time."
   },
   {
@@ -230,23 +348,37 @@ const days = [
     title: "Built-in songs and the Song Book",
     goal: "By the end of this session, you can find a song by number and play through it once at a slow tempo.",
     intro: "125 onboard songs are ready to play along to, and Yamaha offers a free downloadable Easy Song Book with sheet music for those songs and related lesson material.",
+    where: "[SONG] button, front panel.",
+    what: "Lets you browse and play any of the 125 built-in songs by number.",
+    press: "Press [SONG], use the number pad or +/− to pick a song number, then press [START/STOP] to play it.",
+    hear: "The LCD shows the song number and name. Pressing [START/STOP] should play the full arrangement, not just a single note or click.",
     steps: [
       ["0–5 min", "Browse the onboard song list and preview two or three that interest you, noting their song numbers."],
       ["5–12 min", "Play through one full song at a slow tempo, mistakes and all — the goal is finishing, not perfection."],
       ["12–15 min", "Write down that song's number so you can return to it directly tomorrow instead of browsing again."]
     ],
-    tip: "The Easy Song Book download gives you sheet music to follow while the keyboard plays or you play along."
+    mistake: "Not writing down a song's number after finding one you like — you'll have to browse from scratch again next time.",
+    tip: "The Easy Song Book download gives you sheet music to follow while the keyboard plays or you play along.",
+    links: [
+      { emoji: "📖", label: "Download the PSR-E383 Song Book", url: "https://usa.yamaha.com/products/musical_instruments/keyboards/portable_keyboards/psr-e383/downloads.html" },
+      { emoji: "🎥", label: "PSR-E383 video manuals", url: "https://manual.yamaha.com/mi/kb-ekb/psr-e383/videos/" }
+    ]
   },
   {
     tag: "Tutor",
     title: "Rhythm & Touch Tutor, and Duo Mode",
     goal: "By the end of this session, you can run a Rhythm & Touch Tutor song and read its OK / Good! feedback.",
     intro: "Rhythm & Touch Tutor trains timing and touch together using Songs 116–125; Duo Mode splits the keyboard into two identical ranges for a teacher and student.",
+    where: "[SONG] button for Rhythm & Touch Tutor songs (116–125); Duo Mode is turned on from the Function settings.",
+    what: "Rhythm & Touch Tutor trains timing and touch strength together. Duo Mode splits the keyboard into two identical octave ranges so two people can play the same part.",
+    press: "Select a song numbered 116–125 for Tutor, then press [START/STOP]. For Duo Mode, turn it on from the Function settings — check your Owner's Manual for the exact Function number if it isn't printed on the panel.",
+    hear: "In Tutor mode, the LCD shows OK for correct timing or Good! for correct timing and touch strength after each phrase. In Duo Mode, both halves of the keyboard play the same notes starting from middle C.",
     steps: [
       ["0–5 min", "Make sure Touch Response isn't set to Off, then choose one of Songs 116–125 and start Rhythm & Touch Tutor — the display shows when, and how strongly, to play each note."],
       ["5–11 min", "Play along and watch for the OK feedback (correct timing) or Good! (correct timing and touch strength), then check your result at the end of the phrase."],
       ["11–15 min", "Switch to Duo Mode and play a simple phrase with someone else, each of you using the same octave range."]
     ],
+    mistake: "Leaving Touch Response set to Off during Tutor practice — Tutor needs Touch Response on to register your touch strength at all.",
     tip: "Rhythm & Touch Tutor needs Touch Response on to register your touch strength at all — it's the one lesson mode where Off will hold you back."
   },
   {
@@ -254,23 +386,33 @@ const days = [
     title: "The arpeggio function",
     goal: "By the end of this session, you can turn Arpeggio on and trigger a pattern from a held chord.",
     intro: "Hold the notes of a chord and one of 152 Arpeggio types turns them into a moving, patterned phrase automatically.",
+    where: "[HARMONY/ARPEGGIO] button, front panel.",
+    what: "Turns the notes of a held chord into an automatically moving, patterned phrase.",
+    press: "Press [HARMONY/ARPEGGIO] to turn Arpeggio on, hold a chord (like C-E-G), and use the category buttons or +/− to try different Arpeggio types.",
+    hear: "The LCD shows the current Arpeggio type name or number. Holding a chord should produce a repeating pattern instead of a static chord — releasing the chord stops it.",
     steps: [
       ["0–5 min", "Turn on Arpeggio and hold a simple C major triad — root, third, fifth — and listen to the pattern it creates."],
       ["5–12 min", "Try two or three different Arpeggio types and compare how the pattern changes shape with the same chord."],
-      ["12–15 min", "Layer a sustained pad Voice under the arpeggio using Dual mode from Day 4, for a fuller texture."]
+      ["12–15 min", "Layer a sustained pad Voice under the arpeggio using Dual mode from Session 4, for a fuller texture."]
     ],
+    mistake: "Releasing the chord too soon — Arpeggio patterns need the notes held down to keep playing.",
     tip: "Arpeggios are a quick way to add movement to a slow ballad-style Voice without playing anything fast yourself."
   },
   {
     tag: "S.Art Lite",
     title: "Super Articulation Lite voices",
     goal: "By the end of this session, you can name and play at least one of the 12 S.Art Lite Voices.",
-    intro: "The 12 Super Articulation Lite (S.Art Lite) Voices add realistic playing details — like guitar-string harmonics or saxophone bends — as you play.",
+    intro: "S.Art Lite is a special type of Voice that imitates playing techniques hard to reproduce with ordinary keyboard sounds — things like guitar-string harmonics, guitar pick-slide effects, or saxophone bends. There are 12 of them on board.",
+    where: "[ARTICULATION] button, front panel.",
+    what: "S.Art Lite Voices imitate playing techniques — like guitar harmonics or saxophone bends — that ordinary keyboard sounds can't reproduce.",
+    press: "Select an S.Art Lite Voice → confirm \"S.Art Lite\" appears on the LCD → play normally → press and hold [ARTICULATION] to trigger the effect → release to stop.",
+    hear: "The LCD shows \"S.Art Lite\" next to the Voice name. Holding [ARTICULATION] while playing should add an audible extra effect that stops as soon as you release the button.",
     steps: [
-      ["0–5 min", "Find an S.Art Lite Voice, often a guitar or wind instrument, and play a slow phrase."],
-      ["5–12 min", "Listen for the extra articulation between notes, and try varying your touch to trigger different details."],
+      ["0–5 min", "Select an S.Art Lite Voice (often a guitar or wind instrument) and confirm \"S.Art Lite\" appears on the LCD, then play a slow phrase."],
+      ["5–12 min", "While playing, press and hold [ARTICULATION] to trigger the special effect, and release it to stop — try this a few times to hear what changes."],
       ["12–15 min", "Play a simple melody using an S.Art Lite Voice as if it were a solo instrument in a small ensemble."]
     ],
+    mistake: "Expecting the articulation effect automatically — you have to actively press and hold [ARTICULATION] each time you want it.",
     tip: "These Voices reward slower, more deliberate playing — rushing through them hides the detail that makes them special."
   },
   {
@@ -278,23 +420,33 @@ const days = [
     title: "Saving your setup",
     goal: "By the end of this session, you can save a setup to Registration Memory and recall it correctly.",
     intro: "Registration Memory stores a Voice, Style, and other panel settings in one of 10 memory slots, so you can recall the whole setup instantly.",
+    where: "[SHIFT] and [REGIST MEMORY] buttons, front panel.",
+    what: "Registration Memory stores a Voice, Style, and other panel settings in one of 10 slots so you can recall a whole setup instantly.",
+    press: "Hold SHIFT → press REGIST MEMORY → choose a number key, 1–0, to save. Press that same number (without SHIFT) to recall it later.",
+    hear: "The LCD briefly confirms a save or recall. Recalling a slot should instantly change your Voice and Style to match what you saved.",
     steps: [
-      ["0–5 min", "Build a setup you like — a specific Voice, Style, and tempo — from earlier days."],
+      ["0–5 min", "Build a setup you like — a specific Voice, Style, and tempo — from earlier sessions."],
       ["5–11 min", "Hold SHIFT, press REGIST MEMORY, then choose a number from 1–0 to save it. Change everything, then press that number again to confirm it comes right back."],
       ["11–15 min", "Save a second, contrasting setup to a different slot, so you have two ready-made starting points for future practice."]
     ],
+    mistake: "Saving over a slot you meant to keep — check what's already stored in a number before you save to it.",
     tip: "Save setups for the songs or exercises you return to often — it removes all the re-selecting before you can start playing."
   },
   {
     tag: "Record",
     title: "Recording what you play",
     goal: "By the end of this session, you can start an internal recording, and know what Rec'n'Share and USB connectivity need to work.",
-    intro: "The keyboard has internal recording, and can connect to a smart device for Rec'n'Share, or to a computer over USB for MIDI and audio.",
+    intro: "The keyboard has internal recording, and can connect to a smart device for Rec'n'Share, or to a computer over USB. Two different things travel over that USB cable: MIDI (performance data — which notes you played, timing, and how hard) and USB Audio (the keyboard's actual audio signal). MIDI is what a music program uses to record which notes you played as editable data; USB Audio is what lets a computer capture the actual sound.",
+    where: "Internal recording is started from the [SONG] section (check your Owner's Manual's Recording pages for the exact SHIFT + button combo); the rear-panel USB TO HOST port is used for computer connections.",
+    what: "Captures your playing internally, or sends performance and audio data to a phone (Rec'n'Share) or computer over USB.",
+    press: "Start the internal recorder from the Song controls, then play. For a computer, connect USB TO HOST with a USB Type-B cable — USB-B to USB-A if your laptop has USB-A, or USB-B to USB-C if it only has USB-C.",
+    hear: "The LCD shows a recording indicator while capturing. On playback, you should hear exactly what you played, including mistakes.",
     steps: [
       ["0–5 min", "Use the internal recorder to capture a short 30-second clip of anything you've learned this week, then play it back."],
       ["5–12 min", "If you have a phone or tablet, look up Yamaha's Smart Device Connection Manual for your device before connecting, since Rec'n'Share needs the right cable or adapter for your model."],
-      ["12–15 min", "If you have a computer nearby, connect via USB to Host and check that your computer detects the keyboard for both MIDI and audio."]
+      ["12–15 min", "If you have a computer nearby: the keyboard's USB TO HOST port takes a USB Type-B cable (the same squarish connector printers use). Connect it and confirm your computer detects the keyboard for both MIDI and audio — this is not the same as a USB flash-drive port."]
     ],
+    mistake: "Assuming any USB cable will work — USB TO HOST needs a USB Type-B connector on the keyboard end, not a USB-A flash-drive-style cable.",
     tip: "Recording even a rough take is one of the fastest ways to hear your own timing and dynamics honestly."
   },
   {
@@ -302,18 +454,19 @@ const days = [
     title: "Metronome, tempo, and your own routine",
     goal: "By the end of this session, you have a short written routine you can repeat tomorrow without this guide.",
     intro: "Bring together tempo control and a steady click with everything practiced so far into a routine you can repeat.",
+    where: "[METRONOME] button, front panel, with [TEMPO/TAP] nearby to set the speed.",
+    what: "The metronome gives a steady click at a set tempo so you can practice playing in time.",
+    press: "Press [METRONOME] to start the click, then use [TEMPO/TAP] or +/− to set a comfortable tempo.",
+    hear: "The LCD shows the current tempo in BPM. You should hear a steady, even click at that speed.",
     steps: [
       ["0–5 min", "Turn on the metronome, set a comfortable tempo, and play a simple scale in time with the click."],
       ["5–11 min", "Pick one song or exercise from this plan and play it once at a slower tempo, once at your comfortable target tempo."],
       ["11–15 min", "Write down a short daily routine for yourself going forward: which feature to warm up with, and which song to work on next."]
     ],
+    mistake: "Practicing only by feel without a metronome — small timing drifts are hard to notice without a click to compare against.",
     tip: "Fifteen focused minutes with a metronome most days beats an occasional hour — consistency is what the PSR‑E383's lesson system is built around."
   }
 ];
-
-const keySteps = {
-  11: "Hold SHIFT &rarr; press REGIST MEMORY &rarr; choose a number key, 1&ndash;0, to save. Press that same number (without SHIFT) to recall it later."
-};
 
 /* ================================================================
    STATE
@@ -321,11 +474,24 @@ const keySteps = {
 let page = "home"; // "home" | "detail"
 let current = 0;
 const completed = new Set();
+const completedDates = {}; // dayIndex -> "YYYY-MM-DD" of when it was marked done
+const notes = {}; // dayIndex -> free-text note
 const STORAGE_KEY = "psr-e383-progress";
 let storageAvailable = false;
 
 let timerSeconds = 15 * 60;
 let timerInterval = null;
+
+let metronomeBpm = 100;
+let metronomeRunning = false;
+let metronomeTimer = null;
+let audioCtx = null;
+
+let openRefPanel = null; // null | "glossary" | "accessories" | "faq" | "next"
+function toggleRefPanel(name){
+  openRefPanel = openRefPanel === name ? null : name;
+  render();
+}
 
 function formatTime(s){
   const m = Math.floor(s / 60);
@@ -363,6 +529,59 @@ function updateTimerUI(){
   if (toggle) toggle.textContent = timerInterval ? "Pause" : "Start";
 }
 
+/* ---------- Metronome ---------- */
+function ensureAudioCtx(){
+  if (!audioCtx){
+    try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(err){ audioCtx = null; }
+  }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playClick(){
+  const ctx = ensureAudioCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = 1200;
+  gain.gain.setValueAtTime(0.001, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.28, ctx.currentTime + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.07);
+}
+function startMetronome(){
+  if (metronomeRunning) return;
+  ensureAudioCtx();
+  metronomeRunning = true;
+  playClick();
+  metronomeTimer = setInterval(playClick, Math.round(60000 / metronomeBpm));
+  updateMetronomeUI();
+}
+function stopMetronome(){
+  clearInterval(metronomeTimer);
+  metronomeTimer = null;
+  metronomeRunning = false;
+  updateMetronomeUI();
+}
+function changeMetronomeBpm(delta){
+  metronomeBpm = Math.max(40, Math.min(240, metronomeBpm + delta));
+  if (metronomeRunning){
+    clearInterval(metronomeTimer);
+    metronomeTimer = setInterval(playClick, Math.round(60000 / metronomeBpm));
+  }
+  updateMetronomeUI();
+}
+function updateMetronomeUI(){
+  const toggle = document.getElementById("metroToggle");
+  const bpmLabel = document.getElementById("metroBpm");
+  if (toggle) toggle.textContent = metronomeRunning ? "⏹ Stop" : "▶ Click";
+  if (bpmLabel) bpmLabel.textContent = metronomeBpm + " BPM";
+}
+
 /* ---------- Storage ---------- */
 function testStorage(){
   try{
@@ -380,6 +599,12 @@ function loadProgress(){
     if (raw){
       const data = JSON.parse(raw);
       (data.completed || []).forEach(i => completed.add(i));
+      if (data.completedDates && typeof data.completedDates === "object"){
+        Object.keys(data.completedDates).forEach(k => { completedDates[k] = data.completedDates[k]; });
+      }
+      if (data.notes && typeof data.notes === "object"){
+        Object.keys(data.notes).forEach(k => { notes[k] = data.notes[k]; });
+      }
       if (typeof data.lastDay === "number" && data.lastDay >= 0 && data.lastDay < days.length){
         current = data.lastDay;
       }
@@ -389,26 +614,58 @@ function loadProgress(){
 function saveProgress(){
   if (!storageAvailable) return;
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ completed: [...completed], lastDay: current }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      completed: [...completed],
+      completedDates,
+      notes,
+      lastDay: current
+    }));
   } catch(err){ /* fail silently */ }
+}
+function todayStr(){
+  return new Date().toISOString().slice(0, 10);
+}
+function computeStreak(){
+  const dateSet = new Set(Object.values(completedDates));
+  if (dateSet.size === 0) return 0;
+  let streak = 0;
+  const cursor = new Date();
+  // A streak still counts as "alive" if today has no entry yet but yesterday does.
+  if (!dateSet.has(todayStr())) cursor.setDate(cursor.getDate() - 1);
+  while (dateSet.has(cursor.toISOString().slice(0, 10))){
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
 }
 
 /* ================================================================
    NAVIGATION
 ================================================================ */
-function exitApp(){ try{ window.parent.postMessage("exitYamaha", "*"); }catch(e){} }
-function openDay(i){ current = i; page = "detail"; resetTimer(); render(); saveProgress(); }
-function goHome(){ page = "home"; render(); }
+function exitApp(){ stopMetronome(); try{ window.parent.postMessage("exitYamaha", "*"); }catch(e){} }
+function openDay(i){ stopMetronome(); current = i; page = "detail"; resetTimer(); render(); saveProgress(); }
+function goHome(){ stopMetronome(); page = "home"; render(); }
 function toggleComplete(){
-  if (completed.has(current)) completed.delete(current);
-  else completed.add(current);
+  if (completed.has(current)){
+    completed.delete(current);
+    delete completedDates[current];
+  } else {
+    completed.add(current);
+    completedDates[current] = todayStr();
+  }
   render();
   saveProgress();
 }
-function prevDay(){ if (current > 0){ current--; resetTimer(); render(); saveProgress(); } }
-function nextDay(){ if (current < days.length - 1){ current++; resetTimer(); render(); saveProgress(); } }
+function updateNote(text){
+  notes[current] = text;
+  saveProgress();
+}
+function prevDay(){ if (current > 0){ stopMetronome(); current--; resetTimer(); render(); saveProgress(); } }
+function nextDay(){ if (current < days.length - 1){ stopMetronome(); current++; resetTimer(); render(); saveProgress(); } }
 function resetAllProgress(){
   completed.clear();
+  Object.keys(completedDates).forEach(k => delete completedDates[k]);
+  Object.keys(notes).forEach(k => delete notes[k]);
   current = 0;
   render();
   saveProgress();
@@ -419,6 +676,8 @@ function resetAllProgress(){
 ================================================================ */
 function renderHome(){
   const pct = Math.round((completed.size / days.length) * 100);
+  const streak = computeStreak();
+  const allDone = completed.size === days.length;
   const nodes = days.map((d, i) => {
     const done = completed.has(i);
     const isCurrent = i === current && !done;
@@ -442,11 +701,96 @@ function renderHome(){
       </div>
       <button type="button" class="ya-home-btn" id="homeExitBtn">🏠 Home</button>
     </div>
-    <p class="ya-subtitle">14 practice sessions · 15 minutes a day</p>
+    <p class="ya-subtitle">15 practice sessions · 15 minutes a day</p>
+
+    <div class="specs-card">
+      <div class="specs-grid">
+        <div class="spec-item"><b>61</b><span>Keys</span></div>
+        <div class="spec-item"><b>650</b><span>Voices</span></div>
+        <div class="spec-item"><b>260</b><span>Styles</span></div>
+        <div class="spec-item"><b>125</b><span>Songs</span></div>
+        <div class="spec-item"><b>152</b><span>Arpeggio types</span></div>
+        <div class="spec-item"><b>48</b><span>Note polyphony</span></div>
+      </div>
+    </div>
+
+    ${allDone ? `<div class="complete-banner"><b>🎉 All 15 sessions complete!</b>You've been through the whole PSR&#8209;E383 curriculum. Revisit any session below, keep your streak going with a review day, or reset to start fresh.</div>` : ""}
+
+    <div class="ref-icon-row">
+      <button type="button" class="ref-icon-btn ${openRefPanel === "glossary" ? "active" : ""}" data-panel="glossary" title="Glossary" aria-label="Glossary">📖</button>
+      <button type="button" class="ref-icon-btn ${openRefPanel === "accessories" ? "active" : ""}" data-panel="accessories" title="Accessories" aria-label="Accessories">🎒</button>
+      <button type="button" class="ref-icon-btn ${openRefPanel === "faq" ? "active" : ""}" data-panel="faq" title="FAQ" aria-label="FAQ">❓</button>
+      <button type="button" class="ref-icon-btn ${openRefPanel === "next" ? "active" : ""}" data-panel="next" title="Where to go next" aria-label="Where to go next">🔗</button>
+    </div>
+
+    ${openRefPanel === "glossary" ? `<div class="ref-panel">
+      <p class="ref-panel-title">📖 Glossary — what these words mean</p>
+      <dl>
+        <dt>Voice</dt><dd>An instrument sound — what you hear when you play a key.</dd>
+        <dt>Style</dt><dd>An automatic backing band / rhythm arrangement.</dd>
+        <dt>ACMP</dt><dd>Auto Accompaniment — lets your left hand control the backing Style.</dd>
+        <dt>Split Point</dt><dd>The key that separates the accompaniment/chord area from the right-hand area.</dd>
+        <dt>Touch Response</dt><dd>Changes how the keyboard responds to how hard you press a key.</dd>
+        <dt>Polyphony</dt><dd>How many notes can sound at the same time.</dd>
+        <dt>Arpeggio</dt><dd>Automatically plays a repeating pattern based on the notes/chord you hold.</dd>
+        <dt>S.Art Lite</dt><dd>Voices with special playing-technique effects, like guitar harmonics or sax bends.</dd>
+        <dt>MIDI</dt><dd>Performance data — which notes, timing, and how hard — sent between devices.</dd>
+        <dt>LCD</dt><dd>The keyboard's built-in screen.</dd>
+      </dl>
+    </div>` : ""}
+
+    ${openRefPanel === "accessories" ? `<div class="ref-panel">
+      <p class="ref-panel-title">🎒 Accessories you can add</p>
+      <p class="acc-group-title">Power</p>
+      <dl>
+        <dt>6× AA batteries</dt><dd>Alkaline or Ni-MH rechargeable — lets you play away from an outlet (about 5 hours per set, Yamaha estimates).</dd>
+        <dt><a href="https://usa.yamaha.com/products/musical_instruments/keyboards/accessories/pa-130/index.html" target="_blank" rel="noopener noreferrer">PA-130 AC Adapter</a></dt><dd>Official spare/replacement power adapter — the same one included in the box.</dd>
+      </dl>
+      <p class="acc-group-title">Sustain pedals — plug into SUSTAIN</p>
+      <dl>
+        <dt><a href="https://usa.yamaha.com/products/music_production/accessories/fc5/index.html" target="_blank" rel="noopener noreferrer">FC5</a></dt><dd>Foot switch-style sustain pedal.</dd>
+        <dt><a href="https://usa.yamaha.com/products/music_production/accessories/fc4a/index.html" target="_blank" rel="noopener noreferrer">FC4A</a></dt><dd>Piano-style sustain pedal with a more realistic feel.</dd>
+      </dl>
+      <p class="acc-group-title">Stand &amp; carry case</p>
+      <dl>
+        <dt><a href="https://usa.yamaha.com/products/musical_instruments/pianos/accessories/l3c/index.html" target="_blank" rel="noopener noreferrer">L3C</a></dt><dd>Lightweight, quick-release X-style keyboard stand.</dd>
+        <dt><a href="https://usa.yamaha.com/products/musical_instruments/keyboards/accessories/sc-kb630/index.html" target="_blank" rel="noopener noreferrer">SC-KB630</a></dt><dd>Soft carry case sized for select Yamaha 61-key portable keyboards.</dd>
+      </dl>
+      <p class="acc-group-title">Headphones — plug into PHONES/OUTPUT</p>
+      <dl>
+        <dt><a href="https://usa.yamaha.com/products/musical_instruments/pianos/accessories/hph-50/index.html" target="_blank" rel="noopener noreferrer">HPH-50</a></dt><dd>Compact, affordable on-ear headphones.</dd>
+        <dt><a href="https://usa.yamaha.com/products/musical_instruments/pianos/accessories/hph-100/index.html" target="_blank" rel="noopener noreferrer">HPH-100</a></dt><dd>Closed-back headphones with accurate, rich sound.</dd>
+        <dt><a href="https://usa.yamaha.com/products/musical_instruments/pianos/accessories/hph-150/index.html" target="_blank" rel="noopener noreferrer">HPH-150</a></dt><dd>Open-air headphones with studio-quality tone.</dd>
+      </dl>
+      <p class="acc-note">A sustain pedal or a proper stand are the two upgrades beginners tend to notice first — everything here is optional.</p>
+    </div>` : ""}
+
+    ${openRefPanel === "faq" ? `<div class="ref-panel">
+      <p class="ref-panel-title">❓ FAQ &amp; troubleshooting</p>
+      <dl>
+        <dt>The keyboard won't turn on</dt><dd>Make sure the AC adapter is fully plugged into both the wall and the DC IN jack, or that fresh/charged AA batteries are installed correctly. If the LCD stays dark, try a different outlet.</dd>
+        <dt>No sound is coming out</dt><dd>Check MASTER VOLUME isn't turned all the way down, and that headphones aren't plugged into PHONES/OUTPUT — that jack mutes the built-in speakers.</dd>
+        <dt>The keyboard turned itself off mid-practice</dt><dd>That's Auto Power Off, which shuts the keyboard down after a period of inactivity to save power. It can be disabled from the Function settings if you don't want it interrupting a session.</dd>
+        <dt>A Registration Memory setup I saved is gone</dt><dd>Each save overwrites whatever was already in that numbered slot — if a new setup was saved there, the old one is replaced. There's no separate backup.</dd>
+        <dt>ACMP is on but nothing happens when I play</dt><dd>Play below the Split Point, in the left-hand chord area, and make sure a Style is actually running — press [START/STOP] or play a note with [SYNC START] armed.</dd>
+        <dt>My progress disappeared</dt><dd>Progress saves to this browser's local storage on this device only. Clearing browser data, using a private/incognito window, or opening the guide on a different device will reset or hide it.</dd>
+      </dl>
+    </div>` : ""}
+
+    ${openRefPanel === "next" ? `<div class="ref-panel">
+      <p class="ref-panel-title">🔗 Where to go next</p>
+      <div class="link-row" style="margin:4px 0 0">
+        <a class="link-btn" href="https://usa.yamaha.com/files/download/other_assets/1/2293841/PSR-E383_DL_EnFrEsDeZhRu_A0_web.pdf" target="_blank" rel="noopener noreferrer">📋 Data List — full Voice/Style/Song number index</a>
+        <a class="link-btn" href="https://usa.yamaha.com/files/download/other_assets/3/2291233/PSR-E383_reference_manual_En_B0_web.pdf" target="_blank" rel="noopener noreferrer">📘 Full Reference Manual (PDF)</a>
+        <a class="link-btn" href="https://usa.yamaha.com/files/download/other_assets/6/725646/iphone_ipad_connect_En_K0_web.pdf" target="_blank" rel="noopener noreferrer">📱 iPhone/iPad Connection Manual</a>
+        <a class="link-btn" href="https://usa.yamaha.com/files/download/other_assets/9/1179159/android_connect_En_D0_web.pdf" target="_blank" rel="noopener noreferrer">🤖 Android Connection Manual</a>
+      </div>
+    </div>` : ""}
 
     <div class="progress-row">
       <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
       <div class="progress-label">${completed.size}/${days.length} done</div>
+      ${streak > 0 ? `<div class="streak-badge">🔥 ${streak}</div>` : ""}
     </div>
 
     <div class="day-path">${nodes}</div>
@@ -457,6 +801,8 @@ function renderHome(){
     </button>
 
     <div class="reset-row">
+      <button type="button" class="reset-btn" id="printGuideBtn">🖨️ Print all sessions</button>
+      <span aria-hidden="true"> · </span>
       <button type="button" class="reset-btn" id="resetProgressBtn">Reset all progress</button>
     </div>
 
@@ -477,8 +823,8 @@ function renderDetail(){
       </div>
     </div>`).join("");
 
-  const keystepsHtml = keySteps[current]
-    ? `<div class="keysteps-box"><b>Button sequence</b>${keySteps[current]}</div>`
+  const linksHtml = d.links
+    ? `<div class="link-row">${d.links.map(l => `<a class="link-btn" href="${l.url}" target="_blank" rel="noopener noreferrer">${l.emoji} ${l.label}</a>`).join("")}</div>`
     : "";
 
   return `<div class="wrap slide-up">
@@ -490,11 +836,20 @@ function renderDetail(){
     <div class="session-card">
       <div class="session-tag">${d.tag} · Session ${current + 1} of ${days.length}</div>
       <h2 class="session-title">${d.title}</h2>
-      <div class="goal-chip"><b>Goal</b>${d.goal}</div>
+      <div class="goal-chip"><b>What you're learning</b>${d.goal}</div>
       <p class="intro-text">${d.intro}</p>
+
+      <div class="ref-box"><b>📍 Where's the button?</b>${d.where}</div>
+      <div class="ref-box"><b>⚙️ What it does</b>${d.what}</div>
+      <div class="keysteps-box"><b>👉 Exactly what to press</b>${d.press}</div>
+      <div class="ref-box"><b>👀 What you should see / hear</b>${d.hear}</div>
+
+      <div class="exercise-label">⏱ 15-minute exercise</div>
       <div class="steps-list">${stepsHtml}</div>
-      ${keystepsHtml}
-      <div class="tip-box"><b>Tip</b>${d.tip}</div>
+
+      <div class="mistake-box"><b>⚠️ Common beginner mistake</b>${d.mistake}</div>
+      ${linksHtml}
+      <div class="tip-box"><b>💡 Tip</b>${d.tip}</div>
 
       <div class="control-strip">
         <span class="timer-chip" id="timerDisplay">${formatTime(timerSeconds)}</span>
@@ -502,7 +857,18 @@ function renderDetail(){
         <button type="button" class="timer-btn" id="timerResetBtn">Reset</button>
       </div>
 
-      <button type="button" class="mark-btn ${isDone ? "done" : ""}" id="markBtn">${isDone ? "Session marked complete" : "Mark session complete"}</button>
+      <div class="metro-strip">
+        <span class="metro-label">🥁 Metronome</span>
+        <span class="metro-bpm" id="metroBpm">${metronomeBpm} BPM</span>
+        <button type="button" class="metro-btn" id="metroDown">−5</button>
+        <button type="button" class="metro-btn" id="metroUp">+5</button>
+        <button type="button" class="metro-btn metro-toggle" id="metroToggle">${metronomeRunning ? "⏹ Stop" : "▶ Click"}</button>
+      </div>
+
+      <label class="notes-label" for="sessionNotes">📝 Your notes for this session</label>
+      <textarea class="notes-area" id="sessionNotes" placeholder="Tempo, song numbers, what to try next…">${notes[current] || ""}</textarea>
+
+      <button type="button" class="mark-btn ${isDone ? "done" : ""}" id="markBtn" style="margin-top:14px">${isDone ? "Session marked complete" : "Mark session complete"}</button>
     </div>
 
     <div class="nav-row">
@@ -510,6 +876,24 @@ function renderDetail(){
       <button type="button" class="nav-btn" id="nextBtn" ${current === days.length - 1 ? "disabled" : ""}>Next ▶</button>
     </div>
   </div>`;
+}
+
+function printGuide(){
+  const area = document.getElementById("printArea");
+  const sessionsHtml = days.map((d, i) => `
+    <div class="print-session">
+      <h2>Session ${i + 1} · ${d.title}</h2>
+      <div class="print-field"><b>Learning:</b> ${d.goal}</div>
+      <div class="print-field"><b>Where:</b> ${d.where}</div>
+      <div class="print-field"><b>What it does:</b> ${d.what}</div>
+      <div class="print-field"><b>Press:</b> ${d.press}</div>
+      <div class="print-field"><b>See/hear:</b> ${d.hear}</div>
+      <ol>${d.steps.map(([t, txt]) => `<li>${t} — ${txt}</li>`).join("")}</ol>
+      <div class="print-field"><b>Common mistake:</b> ${d.mistake}</div>
+      <div class="print-field"><b>Tip:</b> ${d.tip}</div>
+    </div>`).join("");
+  area.innerHTML = `<h1>🎹 PSR-E383 — 15-Session Practice Guide</h1>${sessionsHtml}`;
+  window.print();
 }
 
 function bindEvents(){
@@ -524,6 +908,11 @@ function bindEvents(){
   });
   const resetBtn = document.getElementById("resetProgressBtn");
   if (resetBtn) resetBtn.addEventListener("click", resetAllProgress);
+  const printBtn = document.getElementById("printGuideBtn");
+  if (printBtn) printBtn.addEventListener("click", printGuide);
+  app.querySelectorAll("[data-panel]").forEach(btn => {
+    btn.addEventListener("click", () => toggleRefPanel(btn.dataset.panel));
+  });
 
   const markBtn = document.getElementById("markBtn");
   if (markBtn) markBtn.addEventListener("click", toggleComplete);
@@ -535,6 +924,16 @@ function bindEvents(){
   if (timerToggle) timerToggle.addEventListener("click", () => { timerInterval ? stopTimer() : startTimer(); updateTimerUI(); });
   const timerResetBtn = document.getElementById("timerResetBtn");
   if (timerResetBtn) timerResetBtn.addEventListener("click", () => { resetTimer(); updateTimerUI(); });
+
+  const metroToggle = document.getElementById("metroToggle");
+  if (metroToggle) metroToggle.addEventListener("click", () => { metronomeRunning ? stopMetronome() : startMetronome(); });
+  const metroUp = document.getElementById("metroUp");
+  if (metroUp) metroUp.addEventListener("click", () => changeMetronomeBpm(5));
+  const metroDown = document.getElementById("metroDown");
+  if (metroDown) metroDown.addEventListener("click", () => changeMetronomeBpm(-5));
+
+  const notesArea = document.getElementById("sessionNotes");
+  if (notesArea) notesArea.addEventListener("input", (e) => updateNote(e.target.value));
 }
 
 function render(){
